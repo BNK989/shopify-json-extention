@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Shopify Admin JSON Fields Viewer",
+  "version": "1.0",
+  "description": "Select and display additional fields from Shopify Admin JSON endpoints.",
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "tabs",
+    "webNavigation"
+    ],
+  "host_permissions": [
+    "https://*.myshopify.com/*",
+    "https://admin.shopify.com/store/*/*",
+    "https://admin.shopify.com/store/*/*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://*.myshopify.com/admin/*", "https://admin.shopify.com/store/*/*", "https://admin.shopify.com/store/*/*/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_title": "Toggle .json"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  }
+}
