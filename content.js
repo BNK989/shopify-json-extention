@@ -143,6 +143,9 @@ function isJsonSupportedPath(pathname) {
     '/articles/',
     '/cart'
   ];
+  if (pathname.endsWith('delete')) {
+    return false;
+  }
   return supportedPaths.some(path => pathname.includes(path));
 }
 
@@ -179,7 +182,7 @@ function getJsonData(jsonUrl, selectedFields) {
       } 
     })
     .catch(error => {
-      console.warn('Error fetching JSON data:', error);
+      console.log('Error fetching JSON data:', error); // removed cus it couses error in chrome
       // Create a card with error message for supported paths
       if (isJsonSupportedPath(new URL(jsonUrl).pathname)) {
         const errorData = {
