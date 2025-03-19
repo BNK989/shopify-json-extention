@@ -6,20 +6,36 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     label { display: block; margin-bottom: 10px; }
+    .field-input-container {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+      width: clamp(300px, 50%, 500px);
+    }
+    .field-input-container input {
+      flex: 1;
+      padding: 5px;
+    }
+    .field-input-container button {
+      padding: 5px 10px;
+    }
+    #fields-container {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>Shopify JSON Fields Options</h1>
   <form id="options-form">
-    <label>
-      <input type="checkbox" name="fields" value="id">
-      Customer ID
-    </label>
-    <label>
-      <input type="checkbox" name="fields" value="multipass_identifier">
-      Multipass Identifier
-    </label>
-    <!-- Add more fields here as needed -->
+    <div id="fields-container">
+      <!-- Dynamic fields will be added here -->
+    </div>
+    
+    <div class="field-input-container">
+      <input type="text" id="new-field" placeholder="Enter new field name">
+      <button type="button" id="add-field">Add Field</button>
+    </div>
+    
     <button type="submit">Save</button>
   </form>
   <script src="options.js"></script>

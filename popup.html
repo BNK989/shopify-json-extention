@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Shopify JSON Fields Options</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <form id="options-form">
+    <div class="section">
+      <h1>Fields to Display</h1>
+      <div id="fields-container">
+        <!-- Dynamic tags will be added here -->
+      </div>
+      
+      <div class="field-input-container">
+        <input type="text" id="new-field" placeholder="Enter new field name">
+        <button type="button" id="add-field">Add Field</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h1>Additional Domains</h1>
+      <div id="domains-container">
+        <!-- Dynamic domain tags will be added here -->
+      </div>
+      
+      <div class="field-input-container">
+        <input type="text" id="new-domain" placeholder="Enter domain (e.g., fox.co.il)">
+        <button type="button" id="add-domain">Add Domain</button>
+      </div>
+      <p class="hint">Add domains where you want the extension to work. The extension will look for .json endpoints on these domains.</p>
+    </div>
+    
+    <button class="save-button" type="submit">Save Changes</button>
+  </form>
+  <script src="options.js"></script>
+</body>
+</html> 

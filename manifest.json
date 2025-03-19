@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Shopify Admin JSON Fields Viewer",
-  "version": "1.0",
+  "version": "1.2",
   "description": "Select and display additional fields from Shopify Admin JSON endpoints.",
   "permissions": [
     "storage",
@@ -9,24 +9,43 @@
     "activeTab",
     "tabs",
     "webNavigation"
-    ],
+  ],
   "host_permissions": [
     "https://*.myshopify.com/*",
     "https://admin.shopify.com/store/*/*",
-    "https://admin.shopify.com/store/*/*/*"
+    "https://admin.shopify.com/store/*/*/*",
+    "https://*/*"
   ],
   "content_scripts": [
     {
-      "matches": ["https://*.myshopify.com/admin/*", "https://admin.shopify.com/store/*/*", "https://admin.shopify.com/store/*/*/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://*.myshopify.com/admin/*",
+        "https://admin.shopify.com/store/*/*",
+        "https://admin.shopify.com/store/*/*/*",
+        "https://*/*"
+      ],
+      "css": ["content.css"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.myshopify.com/admin/*",
+        "https://admin.shopify.com/store/*/*",
+        "https://admin.shopify.com/store/*/*/*",
+        "https://*/*"
+      ],
+      "js": ["utils.js", "content.js"],
       "run_at": "document_end"
     }
   ],
   "action": {
-    "default_title": "Toggle .json"
+    "default_title": "Toggle .json",
+    "default_popup": "popup.html"
   },
-  "options_page": "options.html",
   "background": {
     "service_worker": "background.js"
+  },
+  "icons": {
+    "48": "icon.png"
   }
 }
