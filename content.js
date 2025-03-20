@@ -65,6 +65,19 @@ function insertDataToDiv(data, container) {
     } 
     
     li.innerHTML = `<span class="bnk-field-key">${key}:</span> ${displayValue}`;
+
+     // Add click event to copy value
+     li.title = 'Click to copy';
+     li.onclick = () => {
+       navigator.clipboard.writeText(value).then(() => {
+         const originalText = li.innerHTML;
+         li.innerHTML = `${originalText} <span class='copy-confirm'>✔ Copied</span>`;
+         setTimeout(() => {
+           li.querySelector('.copy-confirm').remove();
+         }, 1500);
+       }).catch(err => console.error('Failed to copy:', err));
+     };
+
     ul.appendChild(li);
   }
   

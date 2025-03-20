@@ -1,12 +1,16 @@
 .bnk-field-key {
   font-weight: bold;
   color: #2C6ECB;
-  /* text-transform: capitalize; */
 }
 
 .bnk-container {
   list-style-type: circle;
-  padding-inline-start: 1.3em;
+
+  li {
+    list-style-type: "⚭";
+    padding-inline-start: 1ch;
+    cursor: pointer; 
+  }
 }
 
 .bnk-header {
@@ -54,7 +58,7 @@
   padding: 1em;
   z-index: 10;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  max-width: 20%;
+  width: clamp(200px, 25%, 360px);
   font-family: Arial, sans-serif;
   font-size: 14px;
 }
