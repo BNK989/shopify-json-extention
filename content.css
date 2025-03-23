@@ -58,9 +58,22 @@
   padding: 1em;
   z-index: 10;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  width: clamp(200px, 25%, 360px);
+  width: clamp(200px, 30%, 400px);
   font-family: Arial, sans-serif;
   font-size: 14px;
+
+  opacity: 1;
+  transition: all 0.9s ease;
+
+  @starting-style {
+    opacity: 0;
+    translate: 0 80px;
+  }
+
+  .copy-confirm{
+    font-size: .8em;
+  }
+
 }
 
 .bnk-button-container {
