@@ -5,6 +5,7 @@
 
 .bnk-container {
   list-style-type: circle;
+  padding-inline-start: 0.8em;
 
   li {
     list-style-type: "⚭";
@@ -67,13 +68,19 @@
 
   @starting-style {
     opacity: 0;
-    translate: 0 80px;
+    translate: 80px 0;
   }
-
+  
+  
   .copy-confirm{
     font-size: .8em;
   }
+  
+}
 
+.removing{
+  opacity: 0;
+  translate: 80px 0;
 }
 
 .bnk-button-container {

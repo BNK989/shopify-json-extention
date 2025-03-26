@@ -44,7 +44,10 @@ function insertDataToDiv(data, container) {
     if (card) {
       card.remove();
     } else {
-      container.remove();
+      container.classList.add('removing')
+      setTimeout(()=> {
+        container.remove();
+      }, 900)
     }
   };
   
@@ -315,12 +318,12 @@ function waitForShopifyAdmin() {
 // Function to initialize the extension
 async function initializeExtension() {
   try {
-    // Wait for the DOM to be fully loaded
-    if (document.readyState !== 'complete') {
-      await new Promise(resolve => {
-        window.addEventListener('load', resolve);
-      });
-    }
+    //  // Wait for the DOM to be fully loaded
+    // if (document.readyState !== 'complete') {
+    //   await new Promise(resolve => {
+    //     window.addEventListener('load', resolve);
+    //   });
+    // }
 
     // Only wait for Shopify admin interface if we're in Shopify admin
     if (isShopifyAdmin()) {
