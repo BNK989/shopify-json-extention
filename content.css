@@ -130,9 +130,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-svg{
-  fill: #8a8a8a;
-  overflow: visible;
+  
+  svg{
+    fill: #8a8a8a;
+    overflow: visible;
+  }
 }
