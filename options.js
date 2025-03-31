@@ -63,15 +63,57 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Load saved settings from chrome.storage.sync
-  chrome.storage.sync.get(['selectedFields', 'domains'], function(result) {
+  chrome.storage.sync.get(['selectedFields', 'domains', 'shopifyDomain', 'storefrontToken', 'metafields'], function(result) {
+    // Load regular fields
     const selectedFields = result.selectedFields || ['created_at'];
     selectedFields.forEach(field => {
       fieldsContainer.appendChild(createFieldTag(field));
     });
 
+    // Load domains
     const domains = result.domains || [];
     domains.forEach(domain => {
       domainsContainer.appendChild(createDomainTag(domain));
+    });
+
+    // Load advanced settings
+    if (result.shopifyDomain) {
+      document.getElementById('shopify-domain').value = result.shopifyDomain;
+    }
+    if (result.storefrontToken) {
+      document.getElementById('storefront-token').value = result.storefrontToken;
+    }
+    if (result.metafields && Array.isArray(result.metafields)) {
+      result.metafields.forEach(metafield => addMetafieldTag(metafield));
+    }
+  });
+
+  // Single submit handler to save everything
+  document.getElementById('options-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Get regular fields and domains
+    const fields = Array.from(document.querySelectorAll('input[name="fields"]:checked'))
+                      .map(checkbox => checkbox.value);
+    const domains = Array.from(document.querySelectorAll('input[name="domains"]:checked'))
+                      .map(checkbox => checkbox.value);
+    
+    // Get advanced settings
+    const shopifyDomain = document.getElementById('shopify-domain').value;
+    const storefrontToken = document.getElementById('storefront-token').value;
+    // Fix metafields extraction to only get the span content, not the button
+    const metafields = Array.from(document.querySelectorAll('.metafield-tag > span'))
+                          .map(span => span.textContent.trim());
+
+    // Save everything at once
+    chrome.storage.sync.set({ 
+      selectedFields: fields,
+      domains: domains,
+      shopifyDomain: shopifyDomain,
+      storefrontToken: storefrontToken,
+      metafields: metafields
+    }, function() {
+      window.close();
     });
   });
   
@@ -109,25 +151,54 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Save settings when the form is submitted
-  document.getElementById('options-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // Save fields
-    const fieldCheckboxes = document.querySelectorAll('input[name="fields"]:checked');
-    const fields = Array.from(fieldCheckboxes).map(checkbox => checkbox.value);
-    
-    // Save domains
-    const domainCheckboxes = document.querySelectorAll('input[name="domains"]:checked');
-    const domains = Array.from(domainCheckboxes).map(checkbox => checkbox.value);
-
-    // Save both fields and domains
-    chrome.storage.sync.set({ 
-      selectedFields: fields,
-      domains: domains
-    }, function() {
-      // Close the popup after saving
-      window.close();
-    });
+  // Toggle advanced options
+  document.querySelector('.gear-icon').addEventListener('click', toggleAdvanced);
+  
+function toggleAdvanced() {
+  const advancedSection = document.getElementById('advanced-options');
+  if (advancedSection.style.display === 'none' || !advancedSection.style.display) {
+    advancedSection.style.display = 'block';
+    // Scroll to the advanced section after making it visible
+    advancedSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    advancedSection.style.display = 'none';
+  }
+}
+  
+  // Add metafield handling
+  document.getElementById('add-metafield').addEventListener('click', function() {
+    const newMetafield = document.getElementById('new-metafield').value.trim();
+    if (newMetafield && newMetafield.includes('.')) {
+      addMetafieldTag(newMetafield);
+      document.getElementById('new-metafield').value = '';
+    }
   });
+  
+  // Fix the addMetafieldTag function
+  function addMetafieldTag(metafield) {
+    const tag = document.createElement('div');
+    tag.className = 'tag metafield-tag';
+    
+    const text = document.createElement('span');
+    text.textContent = metafield.trim(); // Clean the input
+    
+    const removeButton = document.createElement('button');
+    removeButton.className = 'remove';
+    removeButton.innerHTML = '×';
+    removeButton.onclick = () => tag.remove();
+    
+    // Hidden checkbox for form submission
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.name = 'metafields';
+    checkbox.value = metafield.trim(); // Clean the value
+    checkbox.checked = true;
+    checkbox.className = 'hidden-checkbox';
+    
+    tag.appendChild(text);
+    tag.appendChild(removeButton);
+    tag.appendChild(checkbox);
+    
+    document.getElementById('metafields-container').appendChild(tag);
+  }
 });

@@ -6,6 +6,9 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
+
+  <div class="gear-icon" id="bnk-gear-icon">⚙️</div>
+  
   <form id="options-form">
     <div class="section">
       <h1>Fields to Display</h1>
@@ -32,8 +35,36 @@
       <p class="hint">Add domains where you want the extension to work. The extension will look for .json endpoints on these domains.</p>
     </div>
     
-    <button class="save-button" type="submit">Save Changes</button>
+    <!-- Advanced Options Section (hidden by default) -->
+    <div id="advanced-options" style="display: none;">
+      <div class="section">
+        <h1>Shopify Configuration</h1>
+        <div class="config-field">
+          <label>SHOPIFY_STORE_DOMAIN</label>
+          <input type="text" id="shopify-domain" placeholder="your-shopify-store.com">
+        </div>
+        <div class="config-field">
+          <label>STOREFRONT_ACCESS_TOKEN</label>
+          <input type="password" id="storefront-token" placeholder="fe6ik57b5...">
+        </div>
+      </div>
+      
+      
+      <div class="section">
+        <h1>Metafields to Monitor</h1>
+        <div id="metafields-container">
+          <!-- Dynamic metafield tags will be added here -->
+        </div>
+        
+        <div class="field-input-container">
+          <input type="text" id="new-metafield" placeholder="Enter metafield (namespace.key)">
+          <button type="button" id="add-metafield">Add Metafield</button>
+        </div>
+      </div>
+    </div>
+      <button class="save-button" type="submit">Save Changes</button>
   </form>
+  
   <script src="options.js"></script>
 </body>
-</html> 
+</html>

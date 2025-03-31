@@ -171,17 +171,33 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 });
 
+// Add a tracking object to prevent duplicate updates
+const processedUrls = {};
+
 // Handle URL changes (without permission requests)
 chrome.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
+  console.log('History state updated:', details);
   if (details.frameId !== 0) return;
   
   try {
     const tab = await chrome.tabs.get(details.tabId);
     const urlToCheck = tab.url;
+    
+    // Skip if we've already processed this URL recently
+    const urlKey = `${details.tabId}:${urlToCheck}`;
+    if (processedUrls[urlKey] && (Date.now() - processedUrls[urlKey]) < 30000) {
+      console.log('Skipping duplicate history update for:', urlToCheck);
+      return;
+    }
+    
     // Check URL without requesting permissions
     const allowed = await isUrlAllowed(urlToCheck, false);
     if (allowed) {
-      safelySendMessage(details.tabId, { action: "updateContent" });
+      // Track this URL as processed
+      processedUrls[urlKey] = Date.now();
+      
+      // Add a flag to indicate this is from the history state update event
+      safelySendMessage(details.tabId, { action: "updateContent", source: "historyUpdate" });
     }
   } catch (error) {
     console.error('Error getting tab:', error);
@@ -192,11 +208,113 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
 
 // Also listen for tab updates (without permission requests)
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  // Only process if the tab has completely loaded and has a URL
   if (changeInfo.status === 'complete' && tab.url) {
+    // Skip if we've already processed this URL recently
+    const urlKey = `${tabId}:${tab.url}`;
+    if (processedUrls[urlKey] && (Date.now() - processedUrls[urlKey]) < 30000) {
+      console.log('Skipping duplicate tab update for:', tab.url);
+      return;
+    }
+    
     // Check URL without requesting permissions
     const allowed = await isUrlAllowed(tab.url, false);
     if (allowed) {
-      safelySendMessage(tabId, { action: "updateContent" });
+      // Track this URL as processed
+      processedUrls[urlKey] = Date.now();
+      
+      // Add a flag to indicate this is from the tab update event
+      safelySendMessage(tabId, { action: "updateContent", source: "tabUpdate" });
+    }
+  }
+});
+
+// Create context menu on install
+// chrome.runtime.onInstalled.addListener(() => {
+//   chrome.contextMenus.create({
+//     id: 'debug-metafields',
+//     title: 'Debugger',
+//     contexts: ['page']
+//   });
+// });
+
+// // Handle context menu clicks
+// chrome.contextMenus.onClicked.addListener((info, tab) => {
+//   if (info.menuItemId === 'debug-metafields') {
+//     chrome.scripting.executeScript({
+//       target: {tabId: tab.id},
+//       function: () => {
+//         // This will execute in the context of the current page
+//         getMetafieldData(7968708558908, ["custom.zip_code", "custom.city"])
+//           .then(results => console.log('Debug Results:', results));
+//       }
+//     });
+//   }
+// });
+
+// Add this new listener for Shopify admin pages
+chrome.webNavigation.onCompleted.addListener(async (details) => {
+  console.log('Shopify admin page navigation completed:', details);
+  if (details.frameId !== 0) return;
+  
+  try {
+    const tab = await chrome.tabs.get(details.tabId);
+    const url = tab.url;
+    
+    // Skip if not Shopify admin
+    if (!url.includes('myshopify.com') && !url.includes('admin.shopify.com')) {
+      return;
+    }
+    
+    // Skip if we've already processed this URL recently
+    const urlKey = `${details.tabId}:${url}`;
+    if (processedUrls[urlKey] && (Date.now() - processedUrls[urlKey]) < 1000) {
+      return;
+    }
+    
+    // Track this URL as processed
+    processedUrls[urlKey] = Date.now();
+    
+    // Send update message with special flag
+    safelySendMessage(details.tabId, {
+      action: "updateContent",
+      source: "shopifyAdminNav"
+    });
+    
+  } catch (error) {
+    console.error('Error handling Shopify admin navigation:', error);
+  }
+}, {
+  url: [
+    { hostContains: 'myshopify.com' },
+    { hostEquals: 'admin.shopify.com' }
+  ]
+});
+
+// Monitors tab updates specifically for Shopify admin pages
+// It implements a debouncing mechanism to prevent duplicate processing
+// and triggers content script updates when valid Shopify admin pages load
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  const isShopifyAdmin = tab.url.includes('myshopify.com') || tab.url.includes('admin.shopify.com');
+
+  if (changeInfo.status === 'complete' && tab.url && isShopifyAdmin) {
+    
+    // Use shorter debounce for admin pages
+    const debounceTime = isShopifyAdmin ? 1000 : 30000;
+    
+    const urlKey = `${tabId}:${tab.url}`;
+    if (processedUrls[urlKey] && (Date.now() - processedUrls[urlKey]) < debounceTime) {
+      return;
+    }
+    
+    const allowed = await isUrlAllowed(tab.url, false);
+    if (allowed) {
+      processedUrls[urlKey] = Date.now();
+      
+      safelySendMessage(tabId, {
+        action: "updateContent",
+        source: isShopifyAdmin ? "shopifyAdminUpdate" : "tabUpdate"
+      });
     }
   }
 });
