@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Load saved settings from chrome.storage.sync
-  chrome.storage.sync.get(['selectedFields', 'domains', 'shopifyDomain', 'storefrontToken', 'metafields'], function(result) {
+  chrome.storage.sync.get(['selectedFields', 'domains', 'shopifyDomain', 'storefrontToken', 'metafields', 'getAllFields'], function(result) {
     // Load regular fields
     const selectedFields = result.selectedFields || ['created_at'];
     selectedFields.forEach(field => {
@@ -86,6 +86,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (result.metafields && Array.isArray(result.metafields)) {
       result.metafields.forEach(metafield => addMetafieldTag(metafield));
     }
+    
+    // Load get all fields toggle state
+    document.getElementById('get-all-fields').checked = result.getAllFields || false;
   });
 
   // Single submit handler to save everything
@@ -111,7 +114,8 @@ document.addEventListener('DOMContentLoaded', function() {
       domains: domains,
       shopifyDomain: shopifyDomain,
       storefrontToken: storefrontToken,
-      metafields: metafields
+      metafields: metafields,
+      getAllFields: document.getElementById('get-all-fields').checked
     }, function() {
       window.close();
     });

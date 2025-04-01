@@ -8,8 +8,7 @@
     "scripting",
     "activeTab",
     "tabs",
-    "webNavigation",
-    "contextMenus"
+    "webNavigation"
   ],
   "host_permissions": [
     "https://*.myshopify.com/*",

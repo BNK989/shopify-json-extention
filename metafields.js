@@ -16,21 +16,35 @@ chrome.storage.sync.get(['shopifyDomain', 'storefrontToken'], function(result) {
 /** 
  * @param {int} id The id of the product (e.g., 7968708558908).
  * @param {string[]} metafields An array of strings in the format "namespace.key".
+ * @param {Object} options Additional options for query generation.
+ * @param {boolean} options.getAllFields Whether to include all selected fields.
+ * @param {string[]} options.selectedFields Array of regular field names to include.
  * @returns {string}
  */
-
-function createQuery(productId, metafields) {
+function createQuery(productId, metafields, options = {}) {
   const productGid = `gid://shopify/Product/${productId}`;
+  const { getAllFields = false, selectedFields = [] } = options;
   
-  const metafieldQueries = metafields.map((field, index) => {
+  const metafieldQueries = metafields.map((field) => {
     const [namespace, key] = field.split(".");
     const alias = key.replace(/[^a-zA-Z0-9]/g, ""); // Clean alias name
-    return `${alias}: metafield(namespace: "${namespace}", key: "${key}") {\n      value\n    }`;
+    return `${alias}: metafield(namespace: "${namespace}", key: "${key}") {
+      value
+    }`;
   }).join("\n    ");
+
+  const regularFields = getAllFields && selectedFields.length > 0
+    ? selectedFields.join("\n    ")
+    : "";
+
+  const allFields = [
+    regularFields,
+    metafieldQueries
+  ].filter(Boolean).join("\n    ");
 
   return `query GetProductBumpDate {
   product(id: "${productGid}") {
-    ${metafieldQueries}
+    ${allFields}
   }
 }`;
 }
@@ -53,8 +67,13 @@ window.getMetafieldData = async function(id, metafieldRequests) {
      return null;
   }
 
-  const query = createQuery(id, metafieldRequests);
-  // console.log("Generated Query:", query); // Good for debugging
+  // Get the getAllFields setting and selectedFields from storage
+  const { getAllFields = false, selectedFields = [] } = await new Promise(resolve => {
+    chrome.storage.sync.get(['getAllFields', 'selectedFields'], result => resolve(result));
+  });
+
+  const query = createQuery(id, metafieldRequests, { getAllFields, selectedFields });
+  console.log("Generated Query:", query); // Good for debugging
 
   try {
     const response = await fetch(storefrontApiUrl, {
@@ -63,11 +82,9 @@ window.getMetafieldData = async function(id, metafieldRequests) {
         'Content-Type': 'application/json',
         'X-Shopify-Storefront-Access-Token': STOREFRONT_ACCESS_TOKEN, // No need for template literal `${}` here
       },
-      // ***** FIX 1: Correct body format *****
       body: JSON.stringify({ query }),
     });
 
-    // ... (response.ok check remains the same) ...
     if (!response.ok) {
       let errorBody = 'Could not read error body';
       try {
@@ -79,7 +96,7 @@ window.getMetafieldData = async function(id, metafieldRequests) {
 
 
     const jsonResponse = await response.json();
-    // console.log("Raw JSON Response:", jsonResponse); // Good for debugging
+    console.log("Raw JSON Response:", jsonResponse);
 
     // Check for GraphQL errors within the response
     if (jsonResponse.errors) {
@@ -92,14 +109,20 @@ window.getMetafieldData = async function(id, metafieldRequests) {
     const results = {};
 
     if (productData) {
-      // ***** FIX 2: Correct data retrieval using aliases *****
-      metafieldRequests.forEach((req) => { // No need for index 'i' here
+      // Process metafields
+      metafieldRequests.forEach((req) => { 
         const [namespace, key] = req.split(".");
         const alias = key.replace(/[^a-zA-Z0-9]/g, ""); // Regenerate the alias
         const value = productData[alias]?.value;     // Access using the alias
         results[key] = value !== undefined ? value : null; // Store using the key, handle undefined explicitly
       });
-      console.log('Processed results:', results);
+
+      // Add selected fields if getAllFields is true
+      if (getAllFields && selectedFields.length > 0) {
+        selectedFields.forEach(field => {
+          results[field] = productData[field] || null;
+        });
+      }
       return results;
     }
 
