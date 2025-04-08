@@ -35,6 +35,18 @@ function insertDataToDiv(data, container) {
   const header = document.createElement('div');
   header.classList.add('bnk-header');
   
+  // Add collapse button if it's a floating container
+  if (container.classList.contains('bnk-floating-container')) {
+    const collapseBtn = document.createElement('button');
+    collapseBtn.classList.add('bnk-collapse-btn');
+    collapseBtn.innerHTML = '<svg viewBox="0 0 20 20"><path d="M12.4 4.6L8 9l4.4 4.4c.6.6.6 1.5 0 2.1-.6.6-1.5.6-2.1 0l-5.5-5.5c-.6-.6-.6-1.5 0-2.1L10.3 2.5c.6-.6 1.5-.6 2.1 0 .6.6.6 1.6 0 2.1z"/></svg>';
+    collapseBtn.onclick = () => {
+      const isCollapsed = container.classList.toggle('collapsed');
+      chrome.storage.local.set({ 'bnkContainerCollapsed': isCollapsed });
+    };
+    container.appendChild(collapseBtn);
+  }
+  
   const h3 = document.createElement('h3');
   h3.textContent = 'Additional Shopify Fields';
   h3.classList.add('Polaris-Text--root', 'Polaris-Text--headingSm', 'bnk-title');
@@ -147,7 +159,15 @@ function insertDataDiv(data) {
       container = document.createElement('div');
       container.id = 'shopify-json-fields-container';
       container.classList.add('bnk-floating-container');
+      
+      // Check stored collapse state
+      chrome.storage.local.get(['bnkContainerCollapsed'], function(result) {
+        if (result.bnkContainerCollapsed) {
+          container.classList.add('collapsed');
+        }
+      });
       document.body.appendChild(container);
+      
     }
     insertDataToDiv(data, container);
   }
