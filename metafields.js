@@ -20,7 +20,7 @@ chrome.storage.sync.get(['shopifyDomain', 'storefrontToken'], function(result) {
  * @param {boolean} options.getAllFields Whether to include all selected fields.
  * @param {string[]} options.selectedFields Array of regular field names to include.
  * @returns {string}
- */
+*/
 function createQuery(productId, metafields, options = {}) {
   const productGid = `gid://shopify/Product/${productId}`;
   const { getAllFields = false, selectedFields = [] } = options;
@@ -60,17 +60,21 @@ window.getMetafieldData = async function(id, metafieldRequests) {
     return null;
   }
 
+  // Get the getAllFields setting and selectedFields from storage first
+  const { getAllFields = false, selectedFields = [] } = await new Promise(resolve => {
+    chrome.storage.sync.get(['getAllFields', 'selectedFields'], result => resolve(result));
+  });
+
+  if (!getAllFields && (!metafieldRequests || metafieldRequests.length === 0)) {
+    return null;
+  }
+
   if (!STOREFRONT_ACCESS_TOKEN) {
      console.error('Storefront Access Token is missing.');
      // Consider a less disruptive error than alert in production
      alert('Storefront Access Token not configured!');
      return null;
   }
-
-  // Get the getAllFields setting and selectedFields from storage
-  const { getAllFields = false, selectedFields = [] } = await new Promise(resolve => {
-    chrome.storage.sync.get(['getAllFields', 'selectedFields'], result => resolve(result));
-  });
 
   const query = createQuery(id, metafieldRequests, { getAllFields, selectedFields });
   console.log("Generated Query:", query); // Good for debugging

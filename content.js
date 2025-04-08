@@ -364,10 +364,6 @@ function waitForShopifyAdmin() {
 }
 
 
-
-
-
-
 // Message listener in content.js
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   // Handle PING message
@@ -377,7 +373,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   }
   
   if (request.action === "updateContent") {
-    console.log("Update content requested from:", request.source || "unknown");
+    // console.log("Update content requested from:", request.source || "unknown");
     
     // Implement debouncing - only process if enough time has passed since last update
     const now = Date.now();
