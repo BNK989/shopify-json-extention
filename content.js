@@ -1,6 +1,6 @@
 
-var lastProcessedTimestamp = 0;
-var DEBOUNCE_TIMEOUT = 5000; // 5 seconds
+let lastProcessedTimestamp = 0;
+let DEBOUNCE_TIMEOUT = 5000; // 5 seconds
 
 // Function to duplicate the last Polaris-LegacyCard and add 'bnk' class
 function duplicateLastCard() {
@@ -398,8 +398,8 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 // Replace the global variable declaration
 if (!window.hasOwnProperty('bnkExtensionInitialized')) {
   window.bnkExtensionInitialized = false;
-  var lastProcessedTimestamp = 0;
-  var DEBOUNCE_TIMEOUT = 5000; // 5 seconds
+  lastProcessedTimestamp = 0;
+   EBOUNCE_TIMEOUT = 5000; // 5 seconds
 
   async function initializeExtension() {
     if (window.bnkExtensionInitialized) {
