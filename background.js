@@ -1,7 +1,14 @@
-// Check saved domains on startup
+// Check saved settings on startup
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.get(['domains'], function(result) {
+  chrome.storage.sync.get(['domains', 'isPaused', 'activePageTypes'], function(result) {
     console.log('Currently saved domains:', result.domains || []);
+    // Set default values if not exists
+    if (result.activePageTypes === undefined) {
+      chrome.storage.sync.set({
+        activePageTypes: ['products', 'collections', 'pages', 'blogs', 'cart'],
+        isPaused: false
+      });
+    }
   });
 });
 
@@ -36,8 +43,15 @@ async function requestHostPermission(url) {
   }
 }
 
-// Function to check if URL is allowed based on saved domains
+// Function to check if URL is allowed based on saved domains and settings
 async function isUrlAllowed(url, shouldRequestPermission = false) {
+  // First check if extension is paused
+  const settings = await chrome.storage.sync.get(['isPaused', 'activePageTypes']);
+  // Return false immediately if extension is paused, before any URL validation
+  if (settings.isPaused) {
+    console.log('Extension is paused');
+    return false;
+  }
   try {
     const urlObj = new URL(url);
     let hostname = urlObj.hostname.toLowerCase();
@@ -82,11 +96,17 @@ async function isUrlAllowed(url, shouldRequestPermission = false) {
         // console.log(`✓ Domain match found for: ${savedDomain}`);
         
         // For custom domains, check if the path contains product-related segments
-        if (pathname.includes('/products/') || 
-            pathname.includes('/collections/') || 
-            pathname.includes('/pages/') || 
-            pathname.includes('/blogs/') || 
-            pathname.includes('/cart')) {
+        // Check if the current page type is enabled
+const activePageTypes = settings.activePageTypes || ['products', 'collections', 'pages', 'blogs', 'cart'];
+const isPageTypeActive = (
+  (pathname.includes('/products/') && activePageTypes.includes('products')) ||
+  (pathname.includes('/collections/') && activePageTypes.includes('collections')) ||
+  (pathname.includes('/pages/') && activePageTypes.includes('pages')) ||
+  (pathname.includes('/blogs/') && activePageTypes.includes('blogs')) ||
+  (pathname.includes('/cart') && activePageTypes.includes('cart'))
+);
+
+if (isPageTypeActive) {
           
           // console.log('✓ Valid path pattern found:', pathname);
           
@@ -176,7 +196,14 @@ const processedUrls = {};
 
 // Handle URL changes (without permission requests)
 chrome.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
-  console.log('History state updated:', details);
+  // Check if extension is paused first
+  const { isPaused } = await chrome.storage.sync.get(['isPaused']);
+  if (isPaused) {
+    console.log('Extension is paused, skipping history update.');
+    return;
+  }
+
+  console.log('History state updated:', details); // Moved log after pause check
   if (details.frameId !== 0) return;
   
   try {
@@ -210,6 +237,13 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   // Only process if the tab has completely loaded and has a URL
   if (changeInfo.status === 'complete' && tab.url) {
+    // First check if extension is paused
+    const { isPaused } = await chrome.storage.sync.get(['isPaused']);
+    if (isPaused) {
+      console.log('Extension is paused, skipping tab update.');
+      return;
+    }
+
     // Skip if we've already processed this URL recently
     const urlKey = `${tabId}:${tab.url}`;
     if (processedUrls[urlKey] && (Date.now() - processedUrls[urlKey]) < 30000) {
@@ -254,6 +288,13 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 // Add this new listener for Shopify admin pages
 chrome.webNavigation.onCompleted.addListener(async (details) => {
+  // Check if extension is paused first
+  const { isPaused } = await chrome.storage.sync.get(['isPaused']);
+  if (isPaused) {
+    console.log('Extension is paused, skipping Shopify admin navigation completion.');
+    return;
+  }
+
   console.log('Shopify admin page navigation completed:', details);
   if (details.frameId !== 0) return;
   
@@ -291,30 +332,4 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
   ]
 });
 
-// Monitors tab updates specifically for Shopify admin pages
-// It implements a debouncing mechanism to prevent duplicate processing
-// and triggers content script updates when valid Shopify admin pages load
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  const isShopifyAdmin = tab.url.includes('myshopify.com') || tab.url.includes('admin.shopify.com');
-
-  if (changeInfo.status === 'complete' && tab.url && isShopifyAdmin) {
-    
-    // Use shorter debounce for admin pages
-    const debounceTime = isShopifyAdmin ? 1000 : 30000;
-    
-    const urlKey = `${tabId}:${tab.url}`;
-    if (processedUrls[urlKey] && (Date.now() - processedUrls[urlKey]) < debounceTime) {
-      return;
-    }
-    
-    const allowed = await isUrlAllowed(tab.url, false);
-    if (allowed) {
-      processedUrls[urlKey] = Date.now();
-      
-      safelySendMessage(tabId, {
-        action: "updateContent",
-        source: isShopifyAdmin ? "shopifyAdminUpdate" : "tabUpdate"
-      });
-    }
-  }
-});
+// REMOVED the second redundant chrome.tabs.onUpdated listener

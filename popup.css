@@ -18,6 +18,10 @@ form {
   margin-bottom: 24px;
   padding-bottom: 24px;
   border-bottom: 1px solid #e1e3e5;
+
+  &:nth-child(2){
+    margin-top: 30px;
+  }
 }
 
 .section:last-child {
@@ -229,10 +233,42 @@ input:checked + .toggle-slider:before {
 }
 
 .toggle-container {
+  position: absolute;
+  top: 7px;
+
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 8px 0;
+}
+
+.page-types-container {
+  margin-top: 15px;
+}
+
+.page-types-container h2 {
+  font-size: 1em;
+  margin: 10px 0;
+  color: #666;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
 }
 
 .metafields-container{

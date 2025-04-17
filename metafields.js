@@ -21,9 +21,11 @@ chrome.storage.sync.get(['shopifyDomain', 'storefrontToken'], function(result) {
  * @param {string[]} options.selectedFields Array of regular field names to include.
  * @returns {string}
 */
-function createQuery(productId, metafields, options = {}) {
-  const productGid = `gid://shopify/Product/${productId}`;
-  const { getAllFields = false, selectedFields = [] } = options;
+function createQuery(itemId, metafields, options = {}) {
+  const { getAllFields = false, selectedFields = [], objectType = 'Product' } = options;
+  const validTypes = ['Product', 'Collection', 'Page', 'Blog', 'Article'];
+  const type = validTypes.includes(objectType) ? objectType : 'Product';
+  const gid = `gid://shopify/${type}/${itemId}`;
   
   const metafieldQueries = metafields.map((field) => {
     const [namespace, key] = field.split(".");
@@ -42,8 +44,9 @@ function createQuery(productId, metafields, options = {}) {
     metafieldQueries
   ].filter(Boolean).join("\n    ");
 
-  return `query GetProductBumpDate {
-  product(id: "${productGid}") {
+  const queryType = type.toLowerCase();
+  return `query Get${type}Fields {
+  ${queryType}(id: "${gid}") {
     ${allFields}
   }
 }`;
@@ -54,9 +57,9 @@ function createQuery(productId, metafields, options = {}) {
  * @param {string[]} metafields An array of strings in the format "namespace.key".
  * @returns {Promise<string>}
  */
-window.getMetafieldData = async function(id, metafieldRequests) {
+window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Product') {
   if (!id) {
-    console.error('Product id is required.');
+    console.error('Object id is required.');
     return null;
   }
 
@@ -71,20 +74,19 @@ window.getMetafieldData = async function(id, metafieldRequests) {
 
   if (!STOREFRONT_ACCESS_TOKEN) {
      console.error('Storefront Access Token is missing.');
-     // Consider a less disruptive error than alert in production
      alert('Storefront Access Token not configured!');
      return null;
   }
 
-  const query = createQuery(id, metafieldRequests, { getAllFields, selectedFields });
-  console.log("Generated Query:", query); // Good for debugging
+  const query = createQuery(id, metafieldRequests, { getAllFields, selectedFields, objectType });
+  console.log("Generated Query:", query);
 
   try {
     const response = await fetch(storefrontApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Shopify-Storefront-Access-Token': STOREFRONT_ACCESS_TOKEN, // No need for template literal `${}` here
+        'X-Shopify-Storefront-Access-Token': STOREFRONT_ACCESS_TOKEN,
       },
       body: JSON.stringify({ query }),
     });
@@ -98,54 +100,47 @@ window.getMetafieldData = async function(id, metafieldRequests) {
       return null;
     }
 
-
     const jsonResponse = await response.json();
     console.log("Raw JSON Response:", jsonResponse);
 
-    // Check for GraphQL errors within the response
     if (jsonResponse.errors) {
         console.error('GraphQL errors:', jsonResponse.errors);
-        // Often helpful to return the errors array or an object indicating failure type
         return { error: 'GraphQL Error', details: jsonResponse.errors };
     }
 
-    const productData = jsonResponse.data?.product;
+    const queryType = objectType.toLowerCase();
+    const objectData = jsonResponse.data?.[queryType];
     const results = {};
 
-    if (productData) {
+    if (objectData) {
       // Process metafields
       metafieldRequests.forEach((req) => { 
         const [namespace, key] = req.split(".");
-        const alias = key.replace(/[^a-zA-Z0-9]/g, ""); // Regenerate the alias
-        const value = productData[alias]?.value;     // Access using the alias
-        results[key] = value !== undefined ? value : null; // Store using the key, handle undefined explicitly
+        const alias = key.replace(/[^a-zA-Z0-9]/g, "");
+        const value = objectData[alias]?.value;
+        results[key] = value !== undefined ? value : null;
       });
 
       // Add selected fields if getAllFields is true
       if (getAllFields && selectedFields.length > 0) {
         selectedFields.forEach(field => {
-          results[field] = productData[field] || null;
+          results[field] = objectData[field] || null;
         });
       }
       return results;
     }
 
-    // Handle product not found specifically if productData is null but no GraphQL errors occurred
-    if (jsonResponse.data && !jsonResponse.data.product) {
-        console.log(`Product not found for ID: ${id}`);
-        return { error: 'Product Not Found' }; // Or return null, depending on desired behavior
+    // Handle object not found
+    if (jsonResponse.data && !objectData) {
+        console.log(`${objectType} not found for ID: ${id}`);
+        return { error: `${objectType} Not Found` };
     }
 
-    // Fallback if data structure is unexpected
-    console.log(`Unexpected response structure. Product data not found for ID: gid://shopify/Product/${id}`);
+    console.log(`Unexpected response structure. ${objectType} data not found for ID: gid://shopify/${objectType}/${id}`);
     return null;
 
-
   } catch (error) {
-    // Network errors handling
     console.error('Error fetching metafield:', error.toString());
-    
-    // More specific error checking
     if (error instanceof TypeError && error.message && error.message.toLowerCase().includes('fetch')) {
       console.error("Network or CORS issue detected");
     }

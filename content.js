@@ -1,6 +1,6 @@
 
-let lastProcessedTimestamp = 0;
-let DEBOUNCE_TIMEOUT = 5000; // 5 seconds
+var lastProcessedTimestamp = 0;
+var DEBOUNCE_TIMEOUT = 5000; // 5 seconds
 
 // Function to duplicate the last Polaris-LegacyCard and add 'bnk' class
 function duplicateLastCard() {
@@ -204,6 +204,14 @@ function extractIdFromUrl(url) {
 
 // Function to fetch JSON data from the Shopify admin page
 async function getJsonData(jsonUrl, selectedFields) {
+  // Check if extension is paused
+  const pauseState = await chrome.storage.sync.get(['isPaused']);
+  if (pauseState.isPaused) {
+    console.log('Extension is paused, skipping JSON data fetch');
+    return;
+  } else {
+    console.log('Extension is not paused, fetching JSON data');
+  }
   try {
     const response = await fetch(jsonUrl);
     if (!response.ok) {
@@ -225,17 +233,36 @@ async function getJsonData(jsonUrl, selectedFields) {
       fieldsData[field] = value;
     });
 
-    // Extract product ID and get metafields
-    const productId = json.product?.id
-    if (productId) {
+    // Extract object type and ID
+    let objectType = 'Product';
+    let objectId = null;
+
+    if (json.product?.id) {
+      objectType = 'Product';
+      objectId = json.product.id;
+    } else if (json.collection?.id) {
+      objectType = 'Collection';
+      objectId = json.collection.id;
+    } else if (json.page?.id) {
+      objectType = 'Page';
+      objectId = json.page.id;
+    } else if (json.blog?.id) {
+      objectType = 'Blog';
+      objectId = json.blog.id;
+    } else if (json.article?.id) {
+      objectType = 'Article';
+      objectId = json.article.id;
+    }
+
+    console.log(`Detected object type: ${objectType}, ID: ${objectId}`);
+
+    if (objectId) {
       try {
-        // Get metafields from storage instead of hardcoding
         const result = await chrome.storage.sync.get(['metafields']);
         const userMetafields = result.metafields || [];
         
-        // Check if getMetafieldData is available
         if (typeof window.getMetafieldData === 'function') {
-          const metafieldData = await window.getMetafieldData(productId, userMetafields);
+          const metafieldData = await window.getMetafieldData(objectId, userMetafields, objectType);
           if (metafieldData && !metafieldData.error) {
             Object.assign(fieldsData, metafieldData);
           } else if (metafieldData?.error) {
@@ -254,7 +281,6 @@ async function getJsonData(jsonUrl, selectedFields) {
     }
   } catch (error) {
     console.log('Error fetching JSON data:', error);
-    // Error handling remains the same
   }
 }
 
@@ -369,29 +395,42 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   // Handle PING message
   if (request.type === 'PING') {
     sendResponse({ type: 'PONG' });
-    return;
+    return true; // Indicate async response
   }
   
   if (request.action === "updateContent") {
-    // console.log("Update content requested from:", request.source || "unknown");
-    
-    // Implement debouncing - only process if enough time has passed since last update
-    const now = Date.now();
-    if (request.source && now - lastProcessedTimestamp < DEBOUNCE_TIMEOUT) {
-      console.log("Debouncing update request, last update was", (now - lastProcessedTimestamp)/1000, "seconds ago");
-      return;
-    }
-    
-    // Update the timestamp
-    lastProcessedTimestamp = now;
-    
-    // Clear the previous container if it exists
-    const container = document.getElementById('shopify-json-fields-container');
-    if (container) return
-    
-    // Process the update
-    updateContent();
+    // Check pause state first
+    chrome.storage.sync.get(['isPaused'], function(result) {
+      if (result.isPaused) {
+        console.log('Extension is paused, ignoring updateContent request.');
+        return; // Don't proceed if paused
+      }
+
+      // console.log("Update content requested from:", request.source || "unknown");
+      
+      // Implement debouncing - only process if enough time has passed since last update
+      const now = Date.now();
+      if (request.source && now - lastProcessedTimestamp < DEBOUNCE_TIMEOUT) {
+        console.log("Debouncing update request, last update was", (now - lastProcessedTimestamp)/1000, "seconds ago");
+        return;
+      }
+      
+      // Update the timestamp
+      lastProcessedTimestamp = now;
+      
+      // Clear the previous container if it exists
+      const container = document.getElementById('shopify-json-fields-container');
+      if (container) {
+        console.log('Container already exists, skipping update.'); // Added log for clarity
+        return;
+      }
+      
+      // Process the update
+      updateContent();
+    });
+    return true; // Indicate async response
   }
+  return false; // Indicate sync response for other messages
 });
 
 // Function to initialize the extension
@@ -399,9 +438,16 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 if (!window.hasOwnProperty('bnkExtensionInitialized')) {
   window.bnkExtensionInitialized = false;
   lastProcessedTimestamp = 0;
-   EBOUNCE_TIMEOUT = 5000; // 5 seconds
+  var DEBOUNCE_TIMEOUT = 5000; // 5 seconds - Ensure var is used if not already declared in this scope
 
   async function initializeExtension() {
+    // Check pause state first
+    const settings = await new Promise(resolve => chrome.storage.sync.get(['isPaused'], resolve));
+    if (settings.isPaused) {
+      console.log('Extension is paused, skipping initialization.');
+      return; // Don't initialize if paused
+    }
+
     if (window.bnkExtensionInitialized) {
       console.log('Extension already initialized');
       return;

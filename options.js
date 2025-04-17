@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Load saved settings from chrome.storage.sync
-  chrome.storage.sync.get(['selectedFields', 'domains', 'shopifyDomain', 'storefrontToken', 'metafields', 'getAllFields'], function(result) {
+  chrome.storage.sync.get(['selectedFields', 'domains', 'shopifyDomain', 'storefrontToken', 'metafields', 'getAllFields', 'isPaused', 'activePageTypes'], function(result) {
     // Load regular fields
     const selectedFields = result.selectedFields || ['created_at'];
     selectedFields.forEach(field => {
@@ -89,6 +89,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load get all fields toggle state
     document.getElementById('get-all-fields').checked = result.getAllFields || false;
+
+    // Load extension pause state
+    document.getElementById('is-paused').checked = result.isPaused || false;
+
+    // Load active page types
+    const pageTypes = result.activePageTypes || ['products', 'collections', 'pages', 'blogs', 'cart'];
+    document.querySelectorAll('input[name="page-type"]').forEach(checkbox => {
+      checkbox.checked = pageTypes.includes(checkbox.value);
+    });
   });
 
   // Single submit handler to save everything
@@ -115,7 +124,9 @@ document.addEventListener('DOMContentLoaded', function() {
       shopifyDomain: shopifyDomain,
       storefrontToken: storefrontToken,
       metafields: metafields,
-      getAllFields: document.getElementById('get-all-fields').checked
+      getAllFields: document.getElementById('get-all-fields').checked,
+      isPaused: document.getElementById('is-paused').checked,
+      activePageTypes: Array.from(document.querySelectorAll('input[name="page-type"]:checked')).map(cb => cb.value)
     }, function() {
       window.close();
     });
