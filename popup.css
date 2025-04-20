@@ -12,6 +12,16 @@ form {
   background-color: #ffffff;
   padding: 16px;
   border-radius: 12px;
+
+  & > .toggle-container {
+    position: absolute;
+    top: 7px;
+  
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+  }
 }
 
 .section {
@@ -230,16 +240,6 @@ input:checked + .toggle-slider {
 
 input:checked + .toggle-slider:before {
   transform: translateX(20px);
-}
-
-.toggle-container {
-  position: absolute;
-  top: 7px;
-
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0;
 }
 
 .page-types-container {

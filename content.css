@@ -11,6 +11,7 @@
     position: relative;
     padding-inline-start: 1.4em;
     cursor: pointer;
+    text-align: start;
 
     &::before {
       content: "";
