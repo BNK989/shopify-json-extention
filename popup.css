@@ -139,6 +139,9 @@ h1 {
 }
 
 .save-button {
+  position: sticky;
+  bottom: 1em;
+  
   background: linear-gradient(to bottom, #444, #222);
   color: white;
   font-weight: bold;

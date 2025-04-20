@@ -174,18 +174,24 @@ function insertDataDiv(data) {
 }
 
 // Function to check if the current path supports JSON endpoint
-function isJsonSupportedPath(pathname) {
-  const supportedPaths = [
-    '/products/',
-    '/collections/',
-    '/pages/',
-    '/blogs/',
-    '/articles/',
-    '/cart'
-  ];
+async function isJsonSupportedPath(pathname) {
+  console.log('Checking JSON support for path:', pathname);
+  const result = await chrome.storage.sync.get(['activePageTypes']);
+  const supportedPaths = result.activePageTypes || ['products', 'collections', 'pages', 'blogs', 'cart'];
+  console.log('Active page types:', supportedPaths);
+  // const supportedPaths = [
+  //   '/products/',
+  //   '/collections/',
+  //   '/pages/',
+  //   '/blogs/',
+  //   '/articles/',
+  //   '/cart'
+  // ];
   if (pathname.endsWith('delete')) {
     return false;
   }
+
+  console.log(supportedPaths.some(path => pathname.includes(path)))
   return supportedPaths.some(path => pathname.includes(path));
 }
 
