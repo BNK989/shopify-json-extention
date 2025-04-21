@@ -1,4 +1,3 @@
-
 var lastProcessedTimestamp = 0;
 var DEBOUNCE_TIMEOUT = 5000; // 5 seconds
 
@@ -332,8 +331,20 @@ async function updateContent() {
   const currentUrl = new URL(window.location.href);
   
   // Check if the current path supports JSON endpoints
-  if (!isJsonSupportedPath(currentUrl.pathname)) {
-    // console.log('Current path does not support JSON endpoints');
+  const isSupportedPath = await isJsonSupportedPath(currentUrl.pathname);
+  if (!isSupportedPath) {
+    console.log('Current path does not support JSON endpoints', currentUrl.pathname );
+    return;
+  }
+
+  // Check if the page type is in activePageTypes
+  const result = await chrome.storage.sync.get(['activePageTypes']);
+  const activePageTypes = result.activePageTypes || [];
+  const currentPathArr = currentUrl.pathname.split('/');
+  const pageType = currentPathArr[currentPathArr.length - 2]; // Extract page type from URL
+
+  if (!activePageTypes.includes(pageType)) {
+    console.log(`Page type '${pageType}' is not in activePageTypes. Skipping update.`);
     return;
   }
 
