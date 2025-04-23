@@ -79,7 +79,7 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
   }
 
   const query = createQuery(id, metafieldRequests, { getAllFields, selectedFields, objectType });
-  console.log("Generated Query:", query);
+  // console.log("Generated Query:", query);
 
   try {
     const response = await fetch(storefrontApiUrl, {

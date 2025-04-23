@@ -74,7 +74,7 @@ function insertDataToDiv(data, container) {
   ul.classList.add('bnk-container');
 
   for (const [key, value] of Object.entries(data)) {
-    if (value === "N/A") continue;
+    if (!value || value === 'null') continue;
     const li = document.createElement('li');
     
     let displayValue = value;
@@ -174,23 +174,13 @@ function insertDataDiv(data) {
 
 // Function to check if the current path supports JSON endpoint
 async function isJsonSupportedPath(pathname) {
-  console.log('Checking JSON support for path:', pathname);
   const result = await chrome.storage.sync.get(['activePageTypes']);
   const supportedPaths = result.activePageTypes || ['products', 'collections', 'pages', 'blogs', 'cart'];
-  console.log('Active page types:', supportedPaths);
-  // const supportedPaths = [
-  //   '/products/',
-  //   '/collections/',
-  //   '/pages/',
-  //   '/blogs/',
-  //   '/articles/',
-  //   '/cart'
-  // ];
+
   if (pathname.endsWith('delete')) {
     return false;
   }
 
-  console.log(supportedPaths.some(path => pathname.includes(path)))
   return supportedPaths.some(path => pathname.includes(path));
 }
 
@@ -214,9 +204,7 @@ async function getJsonData(jsonUrl, selectedFields) {
   if (pauseState.isPaused) {
     console.log('Extension is paused, skipping JSON data fetch');
     return;
-  } else {
-    console.log('Extension is not paused, fetching JSON data');
-  }
+  } 
   try {
     const response = await fetch(jsonUrl);
     if (!response.ok) {
@@ -229,7 +217,7 @@ async function getJsonData(jsonUrl, selectedFields) {
     
     // Process regular fields
     selectedFields.forEach(field => {
-      let value = "N/A";
+      let value = "null";
       for (const key of keys) {
         if (json[key]?.[field] != undefined) {
           value = json[key][field];
@@ -259,7 +247,7 @@ async function getJsonData(jsonUrl, selectedFields) {
       objectId = json.article.id;
     }
 
-    console.log(`Detected object type: ${objectType}, ID: ${objectId}`);
+    // console.log(`Detected object type: ${objectType}, ID: ${objectId}`);
 
     if (objectId) {
       try {
@@ -281,7 +269,7 @@ async function getJsonData(jsonUrl, selectedFields) {
       }
     }
 
-    if (!Object.values(fieldsData).every(value => value === "N/A")) {
+    if (!Object.values(fieldsData).every(value => value === "null")) {
       insertDataDiv(fieldsData);
     }
   } catch (error) {
@@ -428,7 +416,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       // Implement debouncing - only process if enough time has passed since last update
       const now = Date.now();
       if (request.source && now - lastProcessedTimestamp < DEBOUNCE_TIMEOUT) {
-        console.log("Debouncing update request, last update was", (now - lastProcessedTimestamp)/1000, "seconds ago");
+        // console.log("Debouncing update request, last update was", (now - lastProcessedTimestamp)/1000, "seconds ago");
         return;
       }
       
