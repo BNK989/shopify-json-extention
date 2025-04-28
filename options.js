@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Load saved settings from chrome.storage.sync
-  chrome.storage.sync.get(['selectedFields', 'domains', 'shopifyDomain', 'storefrontToken', 'metafields', 'getAllFields', 'isPaused', 'activePageTypes'], function(result) {
+  chrome.storage.sync.get(['selectedFields', 'domains', 'shopifyDomain', 'storefrontToken', 'metafields', 'getAllFields', 'isHeadlessMode', 'isPaused', 'activePageTypes'], function(result) {
     // Load regular fields
     const selectedFields = result.selectedFields || ['created_at'];
     selectedFields.forEach(field => {
@@ -87,8 +87,26 @@ document.addEventListener('DOMContentLoaded', function() {
       result.metafields.forEach(metafield => addMetafieldTag(metafield));
     }
     
-    // Load get all fields toggle state
-    document.getElementById('get-all-fields').checked = result.getAllFields || false;
+    // Load headless mode toggle state
+    const headlessModeCheckbox = document.getElementById('is-headless-mode');
+    const getAllFieldsCheckbox = document.getElementById('get-all-fields');
+    const getAllFieldsLabel = document.querySelector('.get-all-fields-label');
+    
+    headlessModeCheckbox.checked = result.isHeadlessMode || false;
+    getAllFieldsCheckbox.checked = headlessModeCheckbox.checked || result.getAllFields || false;
+    
+    // Set initial state
+    if (headlessModeCheckbox.checked) {
+      getAllFieldsCheckbox.disabled = true;
+      getAllFieldsLabel.classList.add('disabled');
+    }
+    
+    // Add event listener for headless mode changes
+    headlessModeCheckbox.addEventListener('change', function() {
+      getAllFieldsCheckbox.disabled = this.checked;
+      getAllFieldsCheckbox.checked = this.checked ? true : getAllFieldsCheckbox.checked;
+      getAllFieldsLabel.classList.toggle('disabled', this.checked);
+    });
 
     // Load extension pause state
     document.getElementById('is-paused').checked = result.isPaused || false;
@@ -125,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
       storefrontToken: storefrontToken,
       metafields: metafields,
       getAllFields: document.getElementById('get-all-fields').checked,
+      isHeadlessMode: document.getElementById('is-headless-mode').checked,
       isPaused: document.getElementById('is-paused').checked,
       activePageTypes: Array.from(document.querySelectorAll('input[name="page-type"]:checked')).map(cb => cb.value)
     }, function() {

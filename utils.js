@@ -44,9 +44,29 @@ function formatNumber(number) {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+/**
+ * Converts a camelCase string to snake_case
+ * @param {string} str - The camelCase string to convert
+ * @returns {string} The converted snake_case string
+ */
+function camelToSnake(str) {
+  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+}
+
+/**
+ * Converts a snake_case string to camelCase
+ * @param {string} str - The snake_case string to convert
+ * @returns {string} The converted camelCase string
+ */
+function snakeToCamel(str) {
+  return str.toLowerCase().replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+}
+
+
 // Export functions to be used in other files
 window.bnkUtils = {
   getDaysElapsed,
   formatDate,
-  formatNumber
+  formatNumber,
+  snakeToCamel
 }; 

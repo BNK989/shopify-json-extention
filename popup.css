@@ -138,9 +138,17 @@ h1 {
   display: none;
 }
 
-.save-button {
+.save-button-container {
   position: sticky;
-  bottom: 1em;
+  bottom: 0;
+  background: #ffffff;
+  padding: 16px;
+  margin: 0 -16px -16px -16px;
+  z-index: 100;
+  border-top: 1px solid #e1e3e5;
+}
+
+.save-button {
   
   background: linear-gradient(to bottom, #444, #222);
   color: white;

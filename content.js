@@ -67,37 +67,66 @@ function insertDataToDiv(data, container) {
   };
   
   header.appendChild(h3);
-  // header.appendChild(closeButton); // moved to button 
   container.appendChild(header);
   
   const ul = document.createElement('ul');
   ul.classList.add('bnk-container');
 
-  for (const [key, value] of Object.entries(data)) {
-    if (!value || value === 'null') continue;
-    const li = document.createElement('li');
-    
-    let displayValue = value;
-    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-      displayValue = `${window.bnkUtils.formatDate(value)} (${window.bnkUtils.getDaysElapsed(value)})`;
-    } 
-    
-    li.innerHTML = `<span class="bnk-field-key">${key}:</span> ${displayValue}`;
+  // Separate metafields and non-metafields
+  const regularFields = ['id', 'title', 'handle', 'createdAt', 'updatedAt'];
+  const entries = Object.entries(data);
+  
+  // First add non-metafield properties
+  entries
+    .filter(([key]) => regularFields.includes(key))
+    .forEach(([key, value]) => {
+      if (!value || value === 'null') return;
+      const li = document.createElement('li');
+      
+      let displayValue = value;
+      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+        displayValue = `${window.bnkUtils.formatDate(value)} (${window.bnkUtils.getDaysElapsed(value)})`;
+      } 
+      
+      li.innerHTML = `<span class="bnk-field-key">${key}:</span> ${displayValue}`;
+      li.title = 'Click to copy';
+      li.onclick = () => {
+        navigator.clipboard.writeText(value).then(() => {
+          const originalText = li.innerHTML;
+          li.innerHTML = `${originalText} <span class='copy-confirm'>✔ Copied</span>`;
+          setTimeout(() => {
+            li.querySelector('.copy-confirm').remove();
+          }, 1500);
+        }).catch(err => console.error('Failed to copy:', err));
+      };
+      ul.appendChild(li);
+    });
 
-     // Add click event to copy value
-     li.title = 'Click to copy';
-     li.onclick = () => {
-       navigator.clipboard.writeText(value).then(() => {
-         const originalText = li.innerHTML;
-         li.innerHTML = `${originalText} <span class='copy-confirm'>✔ Copied</span>`;
-         setTimeout(() => {
-           li.querySelector('.copy-confirm').remove();
-         }, 1500);
-       }).catch(err => console.error('Failed to copy:', err));
-     };
-
-    ul.appendChild(li);
-  }
+  // Then add metafield properties
+  entries
+    .filter(([key]) => !regularFields.includes(key))
+    .forEach(([key, value]) => {
+      if (!value || value === 'null') return;
+      const li = document.createElement('li');
+      
+      let displayValue = value;
+      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+        displayValue = `${window.bnkUtils.formatDate(value)} (${window.bnkUtils.getDaysElapsed(value)})`;
+      } 
+      
+      li.innerHTML = `<span class="bnk-field-key">${key}:</span> ${displayValue}`;
+      li.title = 'Click to copy';
+      li.onclick = () => {
+        navigator.clipboard.writeText(value).then(() => {
+          const originalText = li.innerHTML;
+          li.innerHTML = `${originalText} <span class='copy-confirm'>✔ Copied</span>`;
+          setTimeout(() => {
+            li.querySelector('.copy-confirm').remove();
+          }, 1500);
+        }).catch(err => console.error('Failed to copy:', err));
+      };
+      ul.appendChild(li);
+    });
   
   container.appendChild(ul);
   
@@ -112,13 +141,13 @@ function insertDataToDiv(data, container) {
     : window.location.pathname + '.json';
   
   jsonButton.href = targetPath;
-  // jsonButton.target = '_blank';
   jsonButton.classList.add('Polaris-Button', 'Polaris-Button--primary');
   jsonButton.innerHTML = `
     <span class="Polaris-Button__Content">
-      <span class="Polaris-Button__Icon" title="${isJsonPage ? 'View Page' : 'View JSON'}">${isJsonPage 
-        ? '<svg xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 466 511.963" style= "height: 12px;" ><path d="M76.065 104.048c14.039 10.427 28.933 21.173 36.759 25.607 19.558 11.169 22.836 38.57 14.408 39.74-3.338.464-14.432-5.327-27.253-12.986-29.561-17.661-74.927-47.317-93.527-76.33C2.224 73.483-.346 66.995.038 61.192c.293-4.445 2.788-7.708 8.265-9.366C47.897 36.613 82.725 19.974 111.131 1.415c2.42-1.346 4.619-1.695 6.631-1.203 6.712 1.64 12.585 15.647 14.456 21.588 2.694 8.553 1.685 13.59-5.18 18.338-13.515 9.346-28.999 16.228-44.546 22.911 111.908 7.207 204.019 54.796 269.926 126.745 72.915 79.599 113.669 188.977 113.581 306.364-.004 6.723-.577 10.496-4.081 13.312-3.164 2.542-7.141 2.712-14.118 2.348-10.814-.563-16.828-2.623-20.808-9.195-3.403-5.62-4.254-13.817-5.081-27.422-.244-4.013-.617-8.023-.884-12.037-6.55-98.572-45.366-189.537-110.1-255.329-58.576-59.533-138.435-98.473-234.862-103.787z"/></svg>'
-        : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-1.5 0a1.5 1.5 0 1 1-3.001-.001 1.5 1.5 0 0 1 3.001.001"></path><path fill-rule="evenodd" d="M8 2c-2.476 0-4.348 1.23-5.577 2.532a9.3 9.3 0 0 0-1.4 1.922 6 6 0 0 0-.37.818c-.082.227-.153.488-.153.728s.071.501.152.728c.088.246.213.524.371.818.317.587.784 1.27 1.4 1.922 1.229 1.302 3.1 2.532 5.577 2.532s4.348-1.23 5.577-2.532a9.3 9.3 0 0 0 1.4-1.922c.158-.294.283-.572.37-.818.082-.227.153-.488.153-.728s-.071-.501-.152-.728a6 6 0 0 0-.371-.818 9.3 9.3 0 0 0-1.4-1.922c-1.229-1.302-3.1-2.532-5.577-2.532m-5.999 6.002v-.004c.004-.02.017-.09.064-.223.058-.161.15-.369.278-.608a7.8 7.8 0 0 1 1.17-1.605c1.042-1.104 2.545-2.062 4.487-2.062s3.445.958 4.486 2.062c.52.55.912 1.126 1.17 1.605.13.24.221.447.279.608.047.132.06.203.064.223v.004c-.004.02-.017.09-.064.223-.058.161-.15.369-.278.608a7.8 7.8 0 0 1-1.17 1.605c-1.042 1.104-2.545 2.062-4.487 2.062s-3.445-.958-4.486-2.062a7.7 7.7 0 0 1-1.17-1.605 4.5 4.5 0 0 1-.279-.608c-.047-.132-.06-.203-.064-.223"></path></svg>'
+      <span class="Polaris-Button__Icon" title="${isJsonPage ? 'View Page' : 'View JSON'}">${
+        isJsonPage 
+          ? '<svg xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 466 511.963" style= "height: 12px;" ><path d="M76.065 104.048c14.039 10.427 28.933 21.173 36.759 25.607 19.558 11.169 22.836 38.57 14.408 39.74-3.338.464-14.432-5.327-27.253-12.986-29.561-17.661-74.927-47.317-93.527-76.33C2.224 73.483-.346 66.995.038 61.192c.293-4.445 2.788-7.708 8.265-9.366C47.897 36.613 82.725 19.974 111.131 1.415c2.42-1.346 4.619-1.695 6.631-1.203 6.712 1.64 12.585 15.647 14.456 21.588 2.694 8.553 1.685 13.59-5.18 18.338-13.515 9.346-28.999 16.228-44.546 22.911 111.908 7.207 204.019 54.796 269.926 126.745 72.915 79.599 113.669 188.977 113.581 306.364-.004 6.723-.577 10.496-4.081 13.312-3.164 2.542-7.141 2.712-14.118 2.348-10.814-.563-16.828-2.623-20.808-9.195-3.403-5.62-4.254-13.817-5.081-27.422-.244-4.013-.617-8.023-.884-12.037-6.55-98.572-45.366-189.537-110.1-255.329-58.576-59.533-138.435-98.473-234.862-103.787z"/></svg>'
+          : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-1.5 0a1.5 1.5 0 1 1-3.001-.001 1.5 1.5 0 0 1 3.001.001"></path><path fill-rule="evenodd" d="M8 2c-2.476 0-4.348 1.23-5.577 2.532a9.3 9.3 0 0 0-1.4 1.922 6 6 0 0 0-.37.818c-.082.227-.153.488-.153.728s.071.501.152.728c.088.246.213.524.371.818.317.587.784 1.27 1.4 1.922 1.229 1.302 3.1 2.532 5.577 2.532s4.348-1.23 5.577-2.532a9.3 9.3 0 0 0 1.4-1.922c.158-.294.283-.572.37-.818.082-.227.153-.488.153-.728s-.071-.501-.152-.728a6 6 0 0 0-.371-.818 9.3 9.3 0 0 0-1.4-1.922c-1.229-1.302-3.1-2.532-5.577-2.532m-5.999 6.002v-.004c.004-.02.017-.09.064-.223.058-.161.15-.369.278-.608a7.8 7.8 0 0 1 1.17-1.605c1.042-1.104 2.545-2.062 4.487-2.062s3.445.958 4.486 2.062c.52.55.912 1.126 1.17 1.605.13.24.221.447.279.608.047.132.06.203.064.223v.004c-.004.02-.017.09-.064.223-.058.161-.15.369-.278.608a7.8 7.8 0 0 1-1.17 1.605c-1.042 1.104-2.545 2.062-4.487 2.062s-3.445-.958-4.486-2.062a7.7 7.7 0 0 1-1.17-1.605 4.5 4.5 0 0 1-.279-.608c-.047-.132-.06-.203-.064-.223"></path></svg>'
       }
        
       </span>
@@ -199,16 +228,51 @@ function extractIdFromUrl(url) {
 
 // Function to fetch JSON data from the Shopify admin page
 async function getJsonData(jsonUrl, selectedFields) {
-  // Check if extension is paused
-  const pauseState = await chrome.storage.sync.get(['isPaused']);
-  if (pauseState.isPaused) {
+  // Check if extension is paused and get headless mode status
+  const settings = await chrome.storage.sync.get(['isPaused', 'isHeadlessMode', 'getAllFields']);
+  if (settings.isPaused) {
     console.log('Extension is paused, skipping JSON data fetch');
     return;
-  } 
+  }
+
+  // If in headless mode, extract ID from URL and use getAllFields
+  if (settings.isHeadlessMode) {
+    const productId = extractIdFromUrl(window.location.href);
+    console.log('Extracted Product ID:', productId);
+    if (productId) {
+      const fieldsData = {};
+      try {
+        // Get user's metafields from storage
+        const metafieldResult = await chrome.storage.sync.get(['metafields']);
+        const userMetafields = metafieldResult.metafields || [];
+        
+        // Get the query before making the request
+        const query = window.createQuery(productId, userMetafields, { getAllFields: settings.getAllFields, selectedFields: [], objectType: 'Product' });
+        console.log('Generated GraphQL Query:', query);
+        
+        const metafieldData = await window.getMetafieldData(productId, userMetafields, 'Product');
+        if (metafieldData && !metafieldData.error) {
+          Object.assign(fieldsData, metafieldData);
+          if (Object.keys(fieldsData).length > 0) {
+            insertDataDiv(fieldsData);
+          }
+        }
+      } catch (error) {
+        console.warn('Error fetching metafield data:', error);
+      }
+      return;
+    }
+  }
   try {
+    console.log('Fetching JSON data from:', jsonUrl);
     const response = await fetch(jsonUrl);
     if (!response.ok) {
-      throw new Error('Network response was not ok: ' + response.statusText);
+      console.error('Network error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url
+      });
+      throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
     }
     const json = await response.json();
     
