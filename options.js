@@ -190,8 +190,21 @@ document.addEventListener('DOMContentLoaded', function() {
   
 function toggleAdvanced() {
   const advancedSection = document.getElementById('advanced-options');
+  const shopifyDomain = document.getElementById('shopify-domain').value;
+  const storefrontToken = document.getElementById('storefront-token').value;
+  const metafieldsSection = document.getElementById('metafields-section');
+  const configMessage = document.getElementById('config-message');
+
   if (advancedSection.style.display === 'none' || !advancedSection.style.display) {
     advancedSection.style.display = 'block';
+    // Check if configuration is filled
+    if (shopifyDomain && storefrontToken) {
+      metafieldsSection.style.display = 'block';
+      configMessage.style.display = 'none';
+    } else {
+      metafieldsSection.style.display = 'none';
+      configMessage.style.display = 'block';
+    }
     // Scroll to the advanced section after making it visible
     advancedSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } else {
@@ -235,4 +248,27 @@ function toggleAdvanced() {
     
     document.getElementById('metafields-container').appendChild(tag);
   }
+
+    // Add click event listener to help icon
+    const helpIcon = document.querySelector('.help-icon');
+    if (helpIcon) {
+      helpIcon.addEventListener('click', () => {
+        window.open('https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/getting-started', '_blank');
+      });
+    }
+
 });
+
+// function goToShopify() {
+//   window.open('https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/getting-started', '_blank');
+// }
+
+// document.addEventListener('DOMContentLoaded', () => {
+//   // Add click event listener to help icon
+//   const helpIcon = document.querySelector('.help-icon');
+//   if (helpIcon) {
+//     helpIcon.addEventListener('click', () => {
+//       window.open('https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/getting-started', '_blank');
+//     });
+//   }
+// });

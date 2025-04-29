@@ -3,15 +3,20 @@ body {
   margin: 0;
   padding: 16px;
   width: 400px;
+  height: fit-content;
+  min-height: 450px;
   color: #212b36;
   background-color: #f1f1f1;
   border-radius: 12px;
+  overflow: hidden;
 }
 
 form {
   background-color: #ffffff;
   padding: 16px;
   border-radius: 12px;
+  height: calc(100% - 32px);
+  overflow: hidden;
 
   & > .toggle-container {
     position: absolute;
@@ -38,6 +43,48 @@ form {
   margin-bottom: 16px;
   padding-bottom: 0;
   border-bottom: none;
+}
+
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #e4e5e7;
+  color: #637381;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 4px;
+  position: relative;
+}
+
+.help-icon:hover {
+  background-color: #d3d5d7;
+  color: #212b36;
+}
+
+.help-icon[data-tooltip]:before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background-color: #212b36;
+  color: white;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.help-icon[data-tooltip]:hover:before {
+  opacity: 1;
+  visibility: visible;
 }
 
 h1 {
@@ -142,7 +189,7 @@ h1 {
   position: sticky;
   bottom: 0;
   background: #ffffff;
-  padding: 16px;
+  padding: 0 16px;
   margin: 0 -16px -16px -16px;
   z-index: 100;
   border-top: 1px solid #e1e3e5;
@@ -188,7 +235,7 @@ h1 {
 #advanced-options {
   margin-top: 20px;
   padding-top: 20px;
-
+  display: none;
   opacity: 1;
   transition: all 0.9s ease;
 
@@ -197,15 +244,37 @@ h1 {
   }
 }
 
-.config-field {
-  margin: 10px 0;
+.config-message {
+  text-align: center;
+  color: #637381;
+  padding: 16px;
+  background-color: #f6f6f7;
+  border-radius: 4px;
+  margin: 16px 0;
+  font-size: 14px;
 }
 
-.config-field label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+#metafields-section {
+  display: none;
+  transition: all 0.3s ease
 }
+
+.configuration-container{
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.config-field {
+  margin: 10px 0;
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
+}
+
+
 
 .toggle-switch {
   position: relative;
