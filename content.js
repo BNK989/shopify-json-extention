@@ -238,7 +238,7 @@ async function getJsonData(jsonUrl, selectedFields) {
   // If in headless mode, extract ID from URL and use getAllFields
   if (settings.isHeadlessMode) {
     const productId = extractIdFromUrl(window.location.href);
-    console.log('Extracted Product ID:', productId);
+    // console.log('Extracted Product ID:', productId);
     if (productId) {
       const fieldsData = {};
       try {
@@ -248,7 +248,7 @@ async function getJsonData(jsonUrl, selectedFields) {
         
         // Get the query before making the request
         const query = window.createQuery(productId, userMetafields, { getAllFields: settings.getAllFields, selectedFields: [], objectType: 'Product' });
-        console.log('Generated GraphQL Query:', query);
+        // console.log('Generated GraphQL Query:', query);
         
         const metafieldData = await window.getMetafieldData(productId, userMetafields, 'Product');
         if (metafieldData && !metafieldData.error) {

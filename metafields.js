@@ -85,10 +85,10 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
   }
 
   const query = createQuery(id, metafieldRequests, { getAllFields, selectedFields, objectType });
-  console.log("Generated Query:", query);
+  // console.log("Generated Query:", query);
 
   const requestBody = { query };
-  console.log("Request Body:", requestBody);
+  // console.log("Request Body:", requestBody);
 
   try {
     const response = await fetch(storefrontApiUrl, {
@@ -110,7 +110,7 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
     }
 
     const jsonResponse = await response.json();
-    console.log("Raw JSON Response:", jsonResponse);
+    // console.log("Raw JSON Response:", jsonResponse);
 
     if (jsonResponse.errors) {
         console.error('GraphQL errors:', jsonResponse.errors);
@@ -129,9 +129,9 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
       } else {
         fieldsArr.push(...metafieldRequests)
       }
-      console.log('objectData:', objectData)
+      // console.log('objectData:', objectData)
       fieldsArr.forEach((req) => { 
-        console.log('req:', req)
+        // console.log('req:', req)
         if (req.includes('.')) {
           const [namespace, key] = req.split(".");
           const alias = key.replace(/[^a-zA-Z0-9]/g, "");
@@ -155,7 +155,7 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
           results[field] = fieldValue || null;
         });
       }
-      console.log("Processed Results:", results);
+      // console.log("Processed Results:", results);
       return results;
     }
 
