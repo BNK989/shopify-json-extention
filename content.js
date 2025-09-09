@@ -24,11 +24,17 @@ function duplicateLastCard() {
   return duplicatedCard;
 }
 
-function insertDataToDiv(data, container) {
+function displayData(data, container) {
   if (!container) return;
   
   // Clear the container's content
   container.innerHTML = '';
+  
+  // If there's an error, display the error container and return
+  if (data.error && data.errorDetails) {
+    container.innerHTML = data.errorDetails;
+    return;
+  }
   
   // Create header with close button
   const header = document.createElement('div');
@@ -179,7 +185,7 @@ function insertDataDiv(data) {
       container.classList.add('Polaris-LegacyCard__Section');
       card.appendChild(container);
     }
-    insertDataToDiv(data, container);
+    displayData(data, container);
   } else {
     // Fallback to floating container if card creation fails
     let container = document.getElementById('shopify-json-fields-container');
@@ -197,7 +203,7 @@ function insertDataDiv(data) {
       document.body.appendChild(container);
       
     }
-    insertDataToDiv(data, container);
+    displayData(data, container);
   }
 }
 
@@ -235,34 +241,61 @@ async function getJsonData(jsonUrl, selectedFields) {
     return;
   }
 
-  // If in headless mode, extract ID from URL and use getAllFields
-  if (settings.isHeadlessMode) {
+  // If in admin interface, handle differently
+  if (window.location.href.startsWith('https://admin.shopify')) {
     const productId = extractIdFromUrl(window.location.href);
-    // console.log('Extracted Product ID:', productId);
     if (productId) {
       const fieldsData = {};
       try {
-        // Get user's metafields from storage
-        const metafieldResult = await chrome.storage.sync.get(['metafields']);
-        const userMetafields = metafieldResult.metafields || [];
+        // Get user's selected fields and metafields
+        const { selectedFields = [], metafields: userMetafields = [] } = await chrome.storage.sync.get(['selectedFields', 'metafields']);
         
-        // Get the query before making the request
-        const query = window.createQuery(productId, userMetafields, { getAllFields: settings.getAllFields, selectedFields: [], objectType: 'Product' });
-        // console.log('Generated GraphQL Query:', query);
+        // Fetch regular fields from .json endpoint
+        const jsonEndpoint = `${window.location.pathname}.json`;
+        const jsonResponse = await fetch(jsonEndpoint);
+        const jsonData = await jsonResponse.json();
         
-        const metafieldData = await window.getMetafieldData(productId, userMetafields, 'Product');
-        if (metafieldData && !metafieldData.error) {
-          Object.assign(fieldsData, metafieldData);
-          if (Object.keys(fieldsData).length > 0) {
-            insertDataDiv(fieldsData);
+        // Process only user-selected regular fields from JSON response
+        if (jsonData.product) {
+          selectedFields.forEach(field => {
+            fieldsData[field] = jsonData.product[field] || null;
+          });
+        }
+
+        // Only fetch metafields if user has selected some
+        if (userMetafields.length > 0) {
+          const metafieldsEndpoint = `${window.location.pathname}/metafields.json`;
+          const metafieldsResponse = await fetch(metafieldsEndpoint);
+          const metafieldsData = await metafieldsResponse.json();
+          
+          if (metafieldsData.metafields) {
+            // Filter and process only user-selected metafields
+            metafieldsData.metafields.forEach(metafield => {
+              const metafieldKey = `${metafield.namespace}.${metafield.key}`;
+              if (userMetafields.includes(metafieldKey)) {
+                fieldsData[metafieldKey] = metafield.value;
+              }
+            });
           }
         }
+
+        if (Object.keys(fieldsData).length > 0) {
+          insertDataDiv(fieldsData);
+        }
       } catch (error) {
-        console.warn('Error fetching metafield data:', error);
+        console.warn('Error fetching admin data:', error);
       }
       return;
     }
   }
+
+  // Handle non-admin pages and non-Shopify sites
+  if (!jsonUrl || !window.location.hostname.includes('shopify.com')) {
+    // For non-Shopify sites or when no URL is provided, skip JSON fetching
+    // The metafields handling will be done in updateContent
+    return;
+  }
+
   try {
     console.log('Fetching JSON data from:', jsonUrl);
     const response = await fetch(jsonUrl);
@@ -311,8 +344,6 @@ async function getJsonData(jsonUrl, selectedFields) {
       objectId = json.article.id;
     }
 
-    // console.log(`Detected object type: ${objectType}, ID: ${objectId}`);
-
     if (objectId) {
       try {
         const result = await chrome.storage.sync.get(['metafields']);
@@ -324,6 +355,8 @@ async function getJsonData(jsonUrl, selectedFields) {
             Object.assign(fieldsData, metafieldData);
           } else if (metafieldData?.error) {
             console.log('Metafield data error:', metafieldData.error);
+            fieldsData.error = metafieldData.error;
+            fieldsData.errorDetails = `Error fetching metafields: ${metafieldData.error}`;
           }
         } else {
           console.log('getMetafieldData function is not yet available');
@@ -390,31 +423,49 @@ async function updateContent() {
   }
 
   // Check if the page type is in activePageTypes
-  const result = await chrome.storage.sync.get(['activePageTypes']);
+  const result = await chrome.storage.sync.get(['activePageTypes', 'selectedFields']);
   const activePageTypes = result.activePageTypes || [];
+  const selectedFields = result.selectedFields || [];
+
+  if (selectedFields.length === 0) {
+    return;
+  }
+
+  // Special handling for non-Shopify sites
+  if (!currentDomain.includes('shopify.com')) {
+    const productId = extractIdFromUrl(window.location.href);
+    if (productId) {
+      try {
+        const result = await chrome.storage.sync.get(['metafields']);
+        const userMetafields = result.metafields || [];
+        const metafieldData = await window.getMetafieldData(productId, userMetafields, 'Product');
+        if (metafieldData && !metafieldData.error) {
+          insertDataDiv(metafieldData);
+        }
+      } catch (error) {
+        console.warn('Error fetching metafield data:', error);
+      }
+    }
+    return;
+  }
+
+  // For Shopify sites, continue with normal flow
   const currentPathArr = currentUrl.pathname.split('/');
-  const pageType = currentPathArr[currentPathArr.length - 2]; // Extract page type from URL
+  const pageType = currentPathArr[currentPathArr.length - 2] || currentPathArr[currentPathArr.length - 1];
 
   if (!activePageTypes.includes(pageType)) {
     console.log(`Page type '${pageType}' is not in activePageTypes. Skipping update.`);
     return;
   }
 
-  chrome.storage.sync.get(['selectedFields'], function(result) {
-    const selectedFields = result.selectedFields || [];
-    if (selectedFields.length === 0) {
-      return;
-    }
+  // If the current URL is not already a JSON endpoint, append ".json" to the pathname.
+  if (!currentUrl.pathname.endsWith('.json')) {
+    currentUrl.pathname += '.json';
+  }
+  const jsonUrl = currentUrl.href;
 
-    // If the current URL is not already a JSON endpoint, append ".json" to the pathname.
-    if (!currentUrl.pathname.endsWith('.json')) {
-      currentUrl.pathname += '.json';
-    }
-    const jsonUrl = currentUrl.href;
-
-    // Fetch the JSON data and display the selected fields
-    getJsonData(jsonUrl, selectedFields);
-  });
+  // Fetch the JSON data and display the selected fields
+  getJsonData(jsonUrl, selectedFields);
 }
 
 // Function to check if we're in Shopify admin

@@ -65,8 +65,8 @@ form {
   color: #212b36;
 }
 
-.help-icon[data-tooltip]:before {
-  content: attr(data-tooltip);
+.help-icon:before {
+  content: "Learn more about Storefront API access tokens";
   position: absolute;
   bottom: 100%;
   left: 50%;
@@ -82,7 +82,7 @@ form {
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.help-icon[data-tooltip]:hover:before {
+.help-icon:hover:before {
   opacity: 1;
   visibility: visible;
 }

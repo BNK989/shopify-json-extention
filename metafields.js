@@ -1,7 +1,7 @@
 // --- Configuration ---
 let SHOPIFY_STORE_DOMAIN = '';
 let STOREFRONT_ACCESS_TOKEN = '';
-const SHOPIFY_API_VERSION = '2024-04'; // Use a recent, supported API version
+const SHOPIFY_API_VERSION = '2025-04'; // Use a recent, supported API version
 
 let storefrontApiUrl = '';
 
@@ -65,7 +65,7 @@ function createQuery(itemId, metafields, options = {}) {
  */
 window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Product') {
   if (!id) {
-    console.error('Object id is required.');
+    console.warn('Object id is required.');
     return null;
   }
 
@@ -79,7 +79,7 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
   }
 
   if (!STOREFRONT_ACCESS_TOKEN) {
-     console.error('Storefront Access Token is missing.');
+     console.warn('Storefront Access Token is missing.');
      alert('Storefront Access Token not configured!');
      return null;
   }
@@ -105,7 +105,7 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
       try {
         errorBody = await response.text();
       } catch (_) {}
-      console.error(`GraphQL request failed: ${response.status} ${response.statusText}`, errorBody);
+      console.warn(`GraphQL request failed: ${response.status} ${response.statusText}`, errorBody);
       return null;
     }
 
@@ -113,7 +113,7 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
     // console.log("Raw JSON Response:", jsonResponse);
 
     if (jsonResponse.errors) {
-        console.error('GraphQL errors:', jsonResponse.errors);
+        console.warn('GraphQL errors:', jsonResponse.errors);
         return { error: 'GraphQL Error', details: jsonResponse.errors };
     }
 
@@ -160,19 +160,70 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
     }
 
     // Handle object not found
-    if (jsonResponse.data && !objectData) {
+    if (jsonResponse.data && (!objectData || Object.keys(objectData).length === 0)) {
+        const gid = `gid://shopify/${objectType}/${id}`;
         console.log(`${objectType} not found for ID: ${id}`);
-        return { error: `${objectType} Not Found` };
+        console.log(`Full GID: ${gid}`);
+        console.log(`Store domain: ${SHOPIFY_STORE_DOMAIN}`);
+        console.log(`API version: ${SHOPIFY_API_VERSION}`);
+        console.log(`Request URL: ${storefrontApiUrl}`);
+        console.log(`Requested fields: ${JSON.stringify(metafieldRequests)}`);
+        console.log(`getAllFields setting: ${getAllFields}`);
+        console.log(`Current page URL: ${window.location.href}`);
+        return { error: `${objectType} Not Found`, details: {
+            id,
+            gid,
+            storeDomain: SHOPIFY_STORE_DOMAIN,
+            apiVersion: SHOPIFY_API_VERSION,
+            requestUrl: storefrontApiUrl,
+            pageUrl: window.location.href
+        }};
     }
 
-    console.log(`Unexpected response structure. ${objectType} data not found for ID: gid://shopify/${objectType}/${id}`);
-    return null;
+    const gid = `gid://shopify/${objectType}/${id}`;
+    console.warn(`Unexpected response structure. ${objectType} data not found for ID: ${gid}`);
+    console.warn(`Store domain: ${SHOPIFY_STORE_DOMAIN}`);
+    console.warn(`API version: ${SHOPIFY_API_VERSION}`);
+    console.warn(`Request URL: ${storefrontApiUrl}`);
+    console.warn(`Response structure:`, JSON.stringify(jsonResponse, null, 2));
+    console.warn(`Current page URL: ${window.location.href}`);
+    return { error: `Unexpected Response Structure`, details: {
+        id,
+        gid,
+        storeDomain: SHOPIFY_STORE_DOMAIN,
+        apiVersion: SHOPIFY_API_VERSION,
+        requestUrl: storefrontApiUrl,
+        responseStructure: jsonResponse,
+        pageUrl: window.location.href
+    }};
 
   } catch (error) {
-    console.error('Error fetching metafield:', error.toString());
+    const gid = `gid://shopify/${objectType}/${id}`;
+    console.warn('Error fetching metafield:', error.toString());
+    console.warn(`Object type: ${objectType}, ID: ${id}`);
+    console.warn(`Full GID: ${gid}`);
+    console.warn(`Store domain: ${SHOPIFY_STORE_DOMAIN}`);
+    console.warn(`API version: ${SHOPIFY_API_VERSION}`);
+    console.warn(`Request URL: ${storefrontApiUrl}`);
+    console.warn(`Current page URL: ${window.location.href}`);
+    
+    let errorType = 'Unknown Error';
     if (error instanceof TypeError && error.message && error.message.toLowerCase().includes('fetch')) {
-      console.error("Network or CORS issue detected");
+      errorType = 'Network or CORS Issue';
+      console.warn("Network or CORS issue detected");
+    } else if (error.name === 'SyntaxError') {
+      errorType = 'JSON Parsing Error';
+      console.warn("Invalid JSON response");
     }
-    return null;
+    
+    return { error: errorType, details: {
+      id,
+      gid,
+      storeDomain: SHOPIFY_STORE_DOMAIN,
+      apiVersion: SHOPIFY_API_VERSION,
+      requestUrl: storefrontApiUrl,
+      errorMessage: error.toString(),
+      pageUrl: window.location.href
+    }};
   }
 }
