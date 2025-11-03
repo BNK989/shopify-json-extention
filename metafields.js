@@ -86,6 +86,7 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
 
   const query = createQuery(id, metafieldRequests, { getAllFields, selectedFields, objectType });
   // console.log("Generated Query:", query);
+  // console.log("storefrontApiUrl:", storefrontApiUrl);
 
   const requestBody = { query };
   // console.log("Request Body:", requestBody);
@@ -164,6 +165,8 @@ window.getMetafieldData = async function(id, metafieldRequests, objectType = 'Pr
         const gid = `gid://shopify/${objectType}/${id}`;
         console.log(`${objectType} not found for ID: ${id}`);
         console.log(`Full GID: ${gid}`);
+        console.log(`jsonResponse.data:`, jsonResponse.data);
+        console.log(`Store domain ${gid}`);
         console.log(`Store domain: ${SHOPIFY_STORE_DOMAIN}`);
         console.log(`API version: ${SHOPIFY_API_VERSION}`);
         console.log(`Request URL: ${storefrontApiUrl}`);
