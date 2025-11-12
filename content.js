@@ -25,6 +25,8 @@ function duplicateLastCard() {
 }
 
 function displayData(data, container) {
+  // Commented out debug logs for production use
+  // console.log('content.js: displayData called with data:', data, 'container:', container);
   if (!container) return;
   
   // Clear the container's content
@@ -168,9 +170,12 @@ function displayData(data, container) {
 
 // Function to inject a styled div showing the selected field data
 function insertDataDiv(data) {
+  // Commented out debug logs for production use
+  // console.log('content.js: insertDataDiv called with data:', data);
   // First, remove any existing bnk cards
   const existingCard = document.querySelector('div.Polaris-LegacyCard.bnk');
   if (existingCard) {
+    // console.log('content.js: removing existing bnk card');
     existingCard.remove();
   }
   
@@ -185,6 +190,7 @@ function insertDataDiv(data) {
       container.classList.add('Polaris-LegacyCard__Section');
       card.appendChild(container);
     }
+    // console.log('content.js: rendering data in duplicated card container:', container);
     displayData(data, container);
   } else {
     // Fallback to floating container if card creation fails
@@ -201,7 +207,7 @@ function insertDataDiv(data) {
         }
       });
       document.body.appendChild(container);
-      
+      // console.log('content.js: created floating container for data:', container);
     }
     displayData(data, container);
   }
@@ -243,31 +249,47 @@ async function getJsonData(jsonUrl, selectedFields) {
 
   // If in admin interface, handle differently
   if (window.location.href.startsWith('https://admin.shopify')) {
-    const productId = extractIdFromUrl(window.location.href);
-    if (productId) {
+    // Determine object type from URL
+    const pathParts = window.location.pathname.split('/');
+    let objectType = null;
+    let objectKey = null;
+    if (pathParts.includes('products')) {
+      objectType = 'Product';
+      objectKey = 'product';
+    } else if (pathParts.includes('collections')) {
+      objectType = 'Collection';
+      objectKey = 'collection';
+    } else if (pathParts.includes('pages')) {
+      objectType = 'Page';
+      objectKey = 'page';
+    } else if (pathParts.includes('blogs')) {
+      objectType = 'Blog';
+      objectKey = 'blog';
+    } else if (pathParts.includes('articles')) {
+      objectType = 'Article';
+      objectKey = 'article';
+    }
+    const objectId = extractIdFromUrl(window.location.href);
+    if (objectId && objectType && objectKey) {
       const fieldsData = {};
       try {
         // Get user's selected fields and metafields
         const { selectedFields = [], metafields: userMetafields = [] } = await chrome.storage.sync.get(['selectedFields', 'metafields']);
-        
         // Fetch regular fields from .json endpoint
         const jsonEndpoint = `${window.location.pathname}.json`;
         const jsonResponse = await fetch(jsonEndpoint);
         const jsonData = await jsonResponse.json();
-        
         // Process only user-selected regular fields from JSON response
-        if (jsonData.product) {
+        if (jsonData[objectKey]) {
           selectedFields.forEach(field => {
-            fieldsData[field] = jsonData.product[field] || null;
+            fieldsData[field] = jsonData[objectKey][field] || null;
           });
         }
-
         // Only fetch metafields if user has selected some
         if (userMetafields.length > 0) {
           const metafieldsEndpoint = `${window.location.pathname}/metafields.json`;
           const metafieldsResponse = await fetch(metafieldsEndpoint);
           const metafieldsData = await metafieldsResponse.json();
-          
           if (metafieldsData.metafields) {
             // Filter and process only user-selected metafields
             metafieldsData.metafields.forEach(metafield => {
@@ -278,7 +300,6 @@ async function getJsonData(jsonUrl, selectedFields) {
             });
           }
         }
-
         if (Object.keys(fieldsData).length > 0) {
           insertDataDiv(fieldsData);
         }
@@ -289,15 +310,15 @@ async function getJsonData(jsonUrl, selectedFields) {
     }
   }
 
-  // Handle non-admin pages and non-Shopify sites
-  if (!jsonUrl || !window.location.hostname.includes('shopify.com')) {
-    // For non-Shopify sites or when no URL is provided, skip JSON fetching
-    // The metafields handling will be done in updateContent
+  // Allow fetching .json for storefront/custom domains as well
+  if (!jsonUrl) {
+    // console.log('content.js: no jsonUrl provided, aborting fetch');
     return;
   }
+  // console.log('content.js: attempting JSON fetch on domain', window.location.hostname);
 
   try {
-    console.log('Fetching JSON data from:', jsonUrl);
+    // console.log('Fetching JSON data from:', jsonUrl);
     const response = await fetch(jsonUrl);
     if (!response.ok) {
       console.error('Network error details:', {
@@ -321,6 +342,11 @@ async function getJsonData(jsonUrl, selectedFields) {
         }
       }
       fieldsData[field] = value;
+      if (value === "null") {
+        // console.log(`content.js: field '${field}' not found in JSON response`);
+      } else {
+        // console.log(`content.js: extracted '${field}':`, value);
+      }
     });
 
     // Extract object type and ID
@@ -354,12 +380,12 @@ async function getJsonData(jsonUrl, selectedFields) {
           if (metafieldData && !metafieldData.error) {
             Object.assign(fieldsData, metafieldData);
           } else if (metafieldData?.error) {
-            console.log('Metafield data error:', metafieldData.error);
+            // console.log('Metafield data error:', metafieldData.error);
             fieldsData.error = metafieldData.error;
             fieldsData.errorDetails = `Error fetching metafields: ${metafieldData.error}`;
           }
         } else {
-          console.log('getMetafieldData function is not yet available');
+          // console.log('getMetafieldData function is not yet available');
         }
       } catch (error) {
         console.warn('Error fetching metafield data:', error);
@@ -407,10 +433,15 @@ async function updateContent() {
   // Get current domain from window location
   const currentDomain = window.location.hostname;
   
-  // Check if this domain is allowed
-  const isAllowed = await isDomainAllowed(currentDomain);
-  if (!isAllowed) {
-    return; // Exit if domain is not in the allowed list
+  // Always allow if in Shopify admin
+  if (window.location.href.startsWith('https://admin.shopify')) {
+    // console.log('content.js: Shopify admin detected, bypassing domain checks');
+  } else {
+    // Check if this domain is allowed
+    const isAllowed = await isDomainAllowed(currentDomain);
+    if (!isAllowed) {
+      return; // Exit if domain is not in the allowed list
+    }
   }
 
   const currentUrl = new URL(window.location.href);
@@ -418,7 +449,7 @@ async function updateContent() {
   // Check if the current path supports JSON endpoints
   const isSupportedPath = await isJsonSupportedPath(currentUrl.pathname);
   if (!isSupportedPath) {
-    console.log('Current path does not support JSON endpoints', currentUrl.pathname );
+    // console.log('Current path does not support JSON endpoints', currentUrl.pathname );
     return;
   }
 
@@ -432,21 +463,36 @@ async function updateContent() {
   }
 
   // Special handling for non-Shopify sites
+  // Special handling for non-Shopify sites:
+  // - If isHeadlessMode is true, prefer metafield/storefront API flow (if available)
+  // - If isHeadlessMode is false, fall through and fetch the .json endpoint (same URL + .json)
+  const headlessResult = await chrome.storage.sync.get(['isHeadlessMode']);
+  const isHeadlessMode = headlessResult.isHeadlessMode || false;
   if (!currentDomain.includes('shopify.com')) {
-    const productId = extractIdFromUrl(window.location.href);
-    if (productId) {
-      try {
-        const result = await chrome.storage.sync.get(['metafields']);
-        const userMetafields = result.metafields || [];
-        const metafieldData = await window.getMetafieldData(productId, userMetafields, 'Product');
-        if (metafieldData && !metafieldData.error) {
-          insertDataDiv(metafieldData);
+    // console.log('content.js: storefront/custom domain detected:', currentDomain, 'isHeadlessMode=', isHeadlessMode);
+    if (isHeadlessMode) {
+      // Try to use getMetafieldData (headless flow) if productId exists
+      const productId = extractIdFromUrl(window.location.href);
+      if (productId) {
+        try {
+          const result = await chrome.storage.sync.get(['metafields']);
+          const userMetafields = result.metafields || [];
+          const metafieldData = (typeof window.getMetafieldData === 'function') ?
+            await window.getMetafieldData(productId, userMetafields, 'Product') : null;
+          if (metafieldData && !metafieldData.error) {
+            insertDataDiv(metafieldData);
+            return;
+          }
+        } catch (error) {
+          console.warn('Error fetching metafield data (headless):', error);
         }
-      } catch (error) {
-        console.warn('Error fetching metafield data:', error);
       }
+      // If headless mode failed or getMetafieldData not available, fall through to try .json as a fallback
+      // console.log('content.js: headless flow did not return data, will try .json fallback');
+    } else {
+      // Not headless: proceed to attempt .json fetch below
+      // console.log('content.js: not headless - will attempt .json fetch for storefront domain');
     }
-    return;
   }
 
   // For Shopify sites, continue with normal flow
