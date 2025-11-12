@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Shopify Admin JSON Fields Viewer",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "Select and display additional fields from Shopify Admin JSON endpoints.",
   "permissions": [
     "storage",
@@ -24,7 +24,7 @@
         "https://admin.shopify.com/store/*/*/*",
         "https://*/*"
       ],
-      "css": ["content.css"],
+  "css": ["content.css", "slidein.css"],
       "run_at": "document_start"
     },
     {
@@ -34,7 +34,7 @@
         "https://admin.shopify.com/store/*/*/*",
         "https://*/*"
       ],
-      "js": ["utils.js", "metafields.js", "content.js"],
+  "js": ["utils.js", "metafields.js", "slidein.js", "content.js"],
       "run_at": "document_end"
     }
   ],

@@ -332,4 +332,14 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
   ]
 });
 
-// REMOVED the second redundant chrome.tabs.onUpdated listener
+// Handler for opening popup.html when Edit Fields is clicked
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.action === 'openPopup') {
+    chrome.windows.create({
+      url: chrome.runtime.getURL('popup.html'),
+      type: 'popup',
+      width: 450,
+      height: 600
+    });
+  }
+});
