@@ -18,14 +18,10 @@ form {
   height: calc(100% - 32px);
   overflow: hidden;
 
-  & > .toggle-container {
-    position: absolute;
-    top: 7px;
-  
+  & > .toggle-container { 
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 8px 0;
   }
 }
 
@@ -225,9 +221,8 @@ h1 {
 }
 
 .gear-icon {
-  position: absolute;
-  right: 20px;
-  top: 20px;
+  margin-left: auto;
+
   cursor: pointer;
   font-size: 1.2em;
 }

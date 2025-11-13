@@ -22,14 +22,14 @@ function createSlideinHeader(container, closeCallback) {
   h3.textContent = 'Shopify Expander';
   h3.classList.add('Polaris-Text--root', 'Polaris-Text--headingSm', 'bnk-title');
 
-  const closeButton = document.createElement('button');
-  closeButton.innerHTML = '×';
-  closeButton.title = 'Close';
-  closeButton.classList.add('bnk-close-button');
-  closeButton.onclick = closeCallback;
+  // const closeButton = document.createElement('button');
+  // closeButton.innerHTML = '×';
+  // closeButton.title = 'Close';
+  // closeButton.classList.add('bnk-close-button');
+  // closeButton.onclick = closeCallback;
 
   header.appendChild(h3);
-  header.appendChild(closeButton);
+  // header.appendChild(closeButton);
   container.appendChild(header);
   return header;
 }
@@ -103,8 +103,30 @@ function createSlideinButtons(isJsonPage, targetPath, editFieldsCallback) {
       </span>
     </span>
   `;
-  buttonContainer.appendChild(jsonButton);
 
+  const editFieldsBtn = document.createElement('button');
+  editFieldsBtn.className = 'Polaris-Button bnk-shopify-secondary-btn';
+  editFieldsBtn.innerHTML = `
+    <span class="Polaris-Button__Content Polaris-Button Polaris-Button--sizeMedium Polaris-Button--variantSecondary">
+      <span class="Polaris-Button__Icon" title="Edit fetched fields">
+        <svg viewBox="0 0 20 20" class="Polaris-Icon__Svg" focusable="false" aria-hidden="true"><path fill-rule="evenodd" d="M15.655 4.344a2.695 2.695 0 0 0-3.81 0l-.599.599-.009-.009-1.06 1.06.008.01-5.88 5.88a2.75 2.75 0 0 0-.805 1.944v1.922a.75.75 0 0 0 .75.75h1.922a2.75 2.75 0 0 0 1.944-.806l7.54-7.539a2.695 2.695 0 0 0 0-3.81Zm-4.409 2.72-5.88 5.88a1.25 1.25 0 0 0-.366.884v1.172h1.172c.331 0 .65-.132.883-.366l5.88-5.88-1.689-1.69Zm2.75.629.599-.599a1.195 1.195 0 1 0-1.69-1.689l-.598.599 1.69 1.689Z"></path></svg>
+      </span>
+    </span>
+  `;
+  editFieldsBtn.onclick = (e) => {
+    e.preventDefault();
+    editFieldsCallback();
+  };
+
+  // const closeButton = document.createElement('button');
+  // closeButton.innerHTML = '×';
+  // closeButton.title = 'Close';
+  // closeButton.classList.add('bnk-close-button');
+  // closeButton.onclick = closeCallback;
+
+  // buttonContainer.appendChild(closeButton);
+  buttonContainer.appendChild(editFieldsBtn);
+  buttonContainer.appendChild(jsonButton);
 
   return buttonContainer;
 }
@@ -130,21 +152,21 @@ function renderSlidein(data, container, editFieldsCallback) {
   header.appendChild(buttons);
 
   // Add Edit Fields button at the bottom of the slide-in
-  const editFieldsBtn = document.createElement('button');
-  editFieldsBtn.className = 'Polaris-Button bnk-shopify-secondary-btn';
-  editFieldsBtn.innerHTML = `
-    <span class="Polaris-Button__Content Polaris-Button Polaris-Button--sizeMedium Polaris-Button--variantSecondary">
-      <span class="Polaris-Button__Icon" title="Edit">
-        <svg viewBox="0 0 20 20" class="Polaris-Icon__Svg" focusable="false" aria-hidden="true"><path fill-rule="evenodd" d="M15.655 4.344a2.695 2.695 0 0 0-3.81 0l-.599.599-.009-.009-1.06 1.06.008.01-5.88 5.88a2.75 2.75 0 0 0-.805 1.944v1.922a.75.75 0 0 0 .75.75h1.922a2.75 2.75 0 0 0 1.944-.806l7.54-7.539a2.695 2.695 0 0 0 0-3.81Zm-4.409 2.72-5.88 5.88a1.25 1.25 0 0 0-.366.884v1.172h1.172c.331 0 .65-.132.883-.366l5.88-5.88-1.689-1.69Zm2.75.629.599-.599a1.195 1.195 0 1 0-1.69-1.689l-.598.599 1.69 1.689Z"></path></svg>
-      </span>
-      Edit Fields
-    </span>
-  `;
-  editFieldsBtn.onclick = (e) => {
-    e.preventDefault();
-    editFieldsCallback();
-  };
-  container.appendChild(editFieldsBtn);
+  // const editFieldsBtn = document.createElement('button');
+  // editFieldsBtn.className = 'Polaris-Button bnk-shopify-secondary-btn';
+  // editFieldsBtn.innerHTML = `
+  //   <span class="Polaris-Button__Content Polaris-Button Polaris-Button--sizeMedium Polaris-Button--variantSecondary">
+  //     <span class="Polaris-Button__Icon" title="Edit">
+  //       <svg viewBox="0 0 20 20" class="Polaris-Icon__Svg" focusable="false" aria-hidden="true"><path fill-rule="evenodd" d="M15.655 4.344a2.695 2.695 0 0 0-3.81 0l-.599.599-.009-.009-1.06 1.06.008.01-5.88 5.88a2.75 2.75 0 0 0-.805 1.944v1.922a.75.75 0 0 0 .75.75h1.922a2.75 2.75 0 0 0 1.944-.806l7.54-7.539a2.695 2.695 0 0 0 0-3.81Zm-4.409 2.72-5.88 5.88a1.25 1.25 0 0 0-.366.884v1.172h1.172c.331 0 .65-.132.883-.366l5.88-5.88-1.689-1.69Zm2.75.629.599-.599a1.195 1.195 0 1 0-1.69-1.689l-.598.599 1.69 1.689Z"></path></svg>
+  //     </span>
+  //     Edit Fields
+  //   </span>
+  // `;
+  // editFieldsBtn.onclick = (e) => {
+  //   e.preventDefault();
+  //   editFieldsCallback();
+  // };
+  // container.appendChild(editFieldsBtn);
 }
 
-window.renderSlidein = renderSlidein;
+// window.renderSlidein = renderSlidein;

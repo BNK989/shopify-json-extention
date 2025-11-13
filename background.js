@@ -339,7 +339,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       url: chrome.runtime.getURL('popup.html'),
       type: 'popup',
       width: 450,
-      height: 600
+      height: 650
     });
   }
 });
